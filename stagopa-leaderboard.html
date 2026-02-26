@@ -169,6 +169,12 @@
 </div>
 
 <script>
+/* =========================
+   SETTINGS (rate-limit safe)
+   ========================= */
+const AUTO_INTERVAL_MS = 60000;     // was 20s — now 60s to avoid 429
+const RETRY_ON_429_MS  = 90000;     // wait 90s then retry once
+
 /* Google CSV links */
 const RAW_OVERALL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=755088792&single=true&output=csv";
 const RAW_SEGMENT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=74730700&single=true&output=csv";
@@ -181,28 +187,29 @@ const OVERALL_CSV = proxify(RAW_OVERALL_CSV);
 const SEGMENT_CSV = proxify(RAW_SEGMENT_CSV);
 
 /* ===== Squad rules ===== */
-const SQUAD_ALL = ["Alex","Ben","Brad","Craig","Jack","Sam"];
+const SQUAD_ALL  = ["Alex","Ben","Brad","Craig","Jack","Sam"];
 const SQUAD_CORE = ["Ben","Brad","Craig"];
 
+function normalizeTitle(s){
+  return String(s || "")
+    .toLowerCase()
+    .replace(/[–—]/g, "-")     // en dash / em dash -> hyphen
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function squadForSegment(segmentTitle){
-  const t = String(segmentTitle || "").toLowerCase();
+  const t = normalizeTitle(segmentTitle);
 
-  // Day 1 before 17:00 = everyone
-  if (t.includes("day 1") && (t.includes("before") || t.includes("till") || t.includes("until"))){
-    return SQUAD_ALL;
-  }
+  // Day 1 (Before 17:00) = everyone
+  if (t.startsWith("day 1") && t.includes("before 17:00")) return SQUAD_ALL;
 
-  // Day 1 after 17:00 = core 3
-  if (t.includes("day 1") && t.includes("after")){
-    return SQUAD_CORE;
-  }
+  // Day 1 – Part 2 (After 17:00) = core 3
+  if (t.startsWith("day 1") && (t.includes("after 17:00") || t.includes("part 2"))) return SQUAD_CORE;
 
   // Days 2-4 = core 3
-  if (t.includes("day 2") || t.includes("day 3") || t.includes("day 4")){
-    return SQUAD_CORE;
-  }
+  if (t.startsWith("day 2") || t.startsWith("day 3") || t.startsWith("day 4")) return SQUAD_CORE;
 
-  // Fallback: core (keeps it tight if a new segment appears)
   return SQUAD_CORE;
 }
 
@@ -217,6 +224,7 @@ const refreshBtn = document.getElementById("refresh");
 const autoBtn = document.getElementById("auto");
 
 refreshBtn.onclick = () => loadAll(true);
+
 autoBtn.onclick = () => {
   autoOn = !autoOn;
   autoBtn.textContent = "Auto: " + (autoOn ? "ON" : "OFF");
@@ -224,8 +232,10 @@ autoBtn.onclick = () => {
   if (autoOn) startAuto(); else stopAuto();
 };
 
-function startAuto(){ stopAuto(); timer = setInterval(() => loadAll(false), 20000); }
+function startAuto(){ stopAuto(); timer = setInterval(() => loadAll(false), AUTO_INTERVAL_MS); }
 function stopAuto(){ if (timer) clearInterval(timer); timer = null; }
+
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 function parseCSV(text){
   const rows = [];
@@ -246,9 +256,22 @@ function parseCSV(text){
   return rows.map(r => r.map(v => v.trim()));
 }
 
-async function fetchText(url, label){
+async function fetchText(url, label, allowRetry=true){
   const bust = (url.includes("?") ? "&" : "?") + "v=" + Date.now();
   const res = await fetch(url + bust, { cache:"no-store" });
+
+  if (res.status === 429){
+    if (!allowRetry) throw new Error(label + " fetch failed: 429");
+    statusEl.textContent = "Rate limited (429). Cooling down…";
+    // Pause auto to reduce hammering
+    autoOn = false;
+    autoBtn.textContent = "Auto: OFF";
+    autoBtn.classList.remove("primary");
+
+    await sleep(RETRY_ON_429_MS);
+    return fetchText(url, label, false);
+  }
+
   if (!res.ok) throw new Error(label + " fetch failed: " + res.status);
   return await res.text();
 }
@@ -313,7 +336,7 @@ function renderOverall(rows){
   overallArea.innerHTML = html;
 }
 
-/* BY SEGMENT: separate mini leaderboards, with squad rules + include 0s for allowed players */
+/* BY SEGMENT: separate mini leaderboards, with squad rules + include 0s */
 function renderSegmentTables(rows){
   const headers = rows[0] || [];
   if (rows.length < 2 || headers.length < 2){
@@ -323,11 +346,9 @@ function renderSegmentTables(rows){
 
   const headerLower = headers.map(h => (h || "").toLowerCase());
 
-  // Player column (Player / Player Name)
   let playerIdx = headerLower.findIndex(h => h.includes("player"));
   if (playerIdx === -1) playerIdx = 0;
 
-  // Segment columns = everything except Player + Grand Total
   const segmentCols = headers
     .map((h, i) => ({ h, i }))
     .filter(c =>
@@ -336,7 +357,6 @@ function renderSegmentTables(rows){
       String(c.h).trim().length
     );
 
-  // Map of player -> row for fast lookup
   const rowByPlayer = new Map();
   rows.slice(1)
     .filter(r => (String(r[playerIdx] || "")).toLowerCase() !== "grand total")
@@ -347,14 +367,12 @@ function renderSegmentTables(rows){
   segmentCols.forEach(seg => {
     const allowed = squadForSegment(seg.h);
 
-    // Build rows for allowed players only (include 0s)
     const data = allowed.map(name => {
       const r = rowByPlayer.get(name);
       const pts = r ? toNumber(r[seg.i]) : 0;
       return { player: name, pts };
     }).sort((a,b) => b.pts - a.pts);
 
-    // If absolutely nobody has points yet, still show table (with 0s)
     html += `<div class="card" style="margin-bottom:12px">
       <h2>${escapeHtml(seg.h)}</h2>
       <table>
