@@ -60,7 +60,7 @@
     background:rgba(255,255,255,0.06);
     font-weight:800;
     font-size:12px;
-    opacity:0.9;
+    opacity:0.95;
   }
   .btn{
     padding:10px 12px;
@@ -170,14 +170,19 @@
 
 <script>
 /* =========================================================
-   Your published CSV links (Google) + Jina proxy (fixes fetch/CORS)
+   Your published CSV links (Google)
    ========================================================= */
-const RAW_OVERALL_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=755088792&single=true&output=csv";
-const RAW_SEGMENT_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=74730700&single=true&output=csv";
+const RAW_OVERALL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=755088792&single=true&output=csv";
+const RAW_SEGMENT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=74730700&single=true&output=csv";
 
-// Jina proxy: add this prefix to make fetch() reliable
-const OVERALL_CSV = "https://r.jina.ai/http://" + RAW_OVERALL_CSV.replace(/^https?:\/\//, "");
-const SEGMENT_CSV = "https://r.jina.ai/http://" + RAW_SEGMENT_CSV.replace(/^https?:\/\//, "");
+/* =========================================================
+   Proxy to make fetch reliable from GitHub Pages
+   ========================================================= */
+function proxify(url){
+  return "https://r.jina.ai/http://" + url.replace(/^https?:\/\//, "");
+}
+const OVERALL_CSV = proxify(RAW_OVERALL_CSV);
+const SEGMENT_CSV = proxify(RAW_SEGMENT_CSV);
 
 /* ========================================================= */
 let autoOn = true;
@@ -200,7 +205,7 @@ autoBtn.onclick = () => {
 
 function startAuto(){
   stopAuto();
-  timer = setInterval(() => loadAll(false), 20000); // every 20s
+  timer = setInterval(() => loadAll(false), 20000);
 }
 function stopAuto(){
   if (timer) clearInterval(timer);
@@ -239,15 +244,33 @@ function parseCSV(text){
   return rows.map(r => r.map(v => v.trim()));
 }
 
-async function fetchCSV(url, label){
+async function fetchText(url, label){
   const bust = (url.includes("?") ? "&" : "?") + "v=" + Date.now();
-  const res = await fetch(url + bust, { cache: "no-store" });
+  const res = await fetch(url + bust, { cache:"no-store" });
   if (!res.ok) throw new Error(label + " fetch failed: " + res.status);
-  const text = await res.text();
+  return await res.text();
+}
 
-  // Jina sometimes wraps content, but CSV will still contain commas and header row
-  if (!text || text.indexOf(",") === -1) throw new Error(label + " returned no CSV data");
-  return text;
+/* =========================
+   FINAL PATCH: extract true CSV starting at the real header row
+   ========================= */
+function extractCSVFromProxy(text, requiredHeaderWords){
+  const lines = String(text).split(/\r?\n/);
+
+  for (let i = 0; i < lines.length; i++){
+    const line = lines[i].trim();
+    const lower = line.toLowerCase();
+
+    const looksCSV = line.includes(",") && line.length > 3;
+    const hasRequired = requiredHeaderWords.every(w => lower.includes(w));
+
+    if (looksCSV && hasRequired){
+      return lines.slice(i).join("\n");
+    }
+  }
+
+  const firstComma = lines.findIndex(l => l.includes(","));
+  return firstComma >= 0 ? lines.slice(firstComma).join("\n") : String(text);
 }
 
 function toNumber(x){
@@ -262,7 +285,12 @@ function escapeHtml(str){
 }
 
 function renderOverall(rows){
-  const header = rows[0].map(h => h.toLowerCase());
+  if (!rows.length){
+    overallArea.innerHTML = `<div class="muted">No entries yet.</div>`;
+    return;
+  }
+
+  const header = rows[0].map(h => (h || "").toLowerCase());
   const playerIdx = header.findIndex(h => h.includes("player"));
   const ptsIdx = header.findIndex(h => h.includes("total") || h.includes("points"));
 
@@ -303,11 +331,9 @@ function renderSegments(rows){
   }
 
   const headers = rows[0];
-  const playerIdx = headers.findIndex(h => h.toLowerCase().includes("player"));
-  if (playerIdx === -1){
-    segmentArea.innerHTML = `<div class="error">By Segment CSV headers not found (missing Player column).</div>`;
-    return;
-  }
+  const headerLower = headers.map(h => (h || "").toLowerCase());
+  let playerIdx = headerLower.findIndex(h => h.includes("player"));
+  if (playerIdx === -1) playerIdx = 0; // fallback
 
   const usableCols = headers
     .map((h, idx) => ({ h, idx }))
@@ -347,19 +373,23 @@ async function loadAll(showStatus){
   try{
     if (showStatus) statusEl.textContent = "Updating…";
 
-    const [overallText, segmentText] = await Promise.all([
-      fetchCSV(OVERALL_CSV, "Overall"),
-      fetchCSV(SEGMENT_CSV, "By Segment")
+    const [overallRaw, segmentRaw] = await Promise.all([
+      fetchText(OVERALL_CSV, "Overall"),
+      fetchText(SEGMENT_CSV, "By Segment")
     ]);
 
-    renderOverall(parseCSV(overallText));
-    renderSegments(parseCSV(segmentText));
+    // FINAL PATCH applied here
+    const overallCSV = extractCSVFromProxy(overallRaw, ["player", "total"]);
+    const segmentCSV = extractCSVFromProxy(segmentRaw, ["player"]);
+
+    renderOverall(parseCSV(overallCSV));
+    renderSegments(parseCSV(segmentCSV));
 
     statusEl.textContent = "Last update: " + new Date().toLocaleTimeString();
   } catch (e){
     statusEl.textContent = "Error loading tables";
     overallArea.innerHTML = `<div class="error">${escapeHtml(e.message)}</div>`;
-    segmentArea.innerHTML = `<div class="muted">If this persists, re-publish the sheets via “Publish to web”.</div>`;
+    segmentArea.innerHTML = `<div class="muted">If this persists, check Publish-to-web is enabled for both sheets.</div>`;
   }
 }
 
