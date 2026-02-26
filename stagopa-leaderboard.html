@@ -45,6 +45,7 @@
     opacity:0.8;
     margin-bottom:12px;
   }
+
   .bar{
     display:flex;
     gap:10px;
@@ -76,6 +77,66 @@
     background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
     color:white;
   }
+
+  /* Collapsible panel */
+  details.panel{
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.18);
+    padding:12px;
+    margin: 0 0 12px;
+  }
+  details.panel > summary{
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    font-weight:900;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:13px;
+    user-select:none;
+  }
+  details.panel > summary::-webkit-details-marker{ display:none; }
+  .chev{
+    width:34px; height:34px;
+    display:grid; place-items:center;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.14);
+    background:rgba(255,255,255,0.06);
+    font-weight:900;
+    opacity:0.9;
+  }
+  details[open] .chev{ transform: rotate(90deg); transition: transform .15s ease; }
+  details:not([open]) .chev{ transform: rotate(0deg); transition: transform .15s ease; }
+  .panelBody{
+    margin-top:10px;
+    border-top:1px solid rgba(255,255,255,0.10);
+    padding-top:10px;
+  }
+  .rules{
+    font-size:13px;
+    line-height:1.4;
+    opacity:0.9;
+    margin:0 0 10px;
+  }
+  .rules ul{ margin:8px 0 0 18px; padding:0; }
+  .rules li{ margin:4px 0; }
+
+  .formWrap{
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.22);
+    overflow:hidden;
+  }
+  iframe{
+    width:100%;
+    height: 680px; /* good mobile-ish height */
+    border:0;
+  }
+
   .grid{
     display:grid;
     grid-template-columns:1fr;
@@ -146,6 +207,42 @@
 
   <h1>Stagopa League Leaderboard</h1>
   <div class="sub">Live points table. One drink = one log. No mercy.</div>
+
+  <!-- Collapsible: How to play + Form -->
+  <details class="panel" open>
+    <summary>
+      <span>Log a Drink + How It Works</span>
+      <span class="chev">›</span>
+    </summary>
+    <div class="panelBody">
+      <div class="rules">
+        <b>How it’s played:</b>
+        <ul>
+          <li>Every time you finish a drink, you submit one log.</li>
+          <li>Pick your <b>Segment</b> (Day 1 before 17:00 / Day 1 Part 2 / Day 2 / Day 3 / Day 4).</li>
+          <li>Points are automatically added to the leaderboards when the sheet updates.</li>
+          <li><b>Core squad only</b> from Day 1 Part 2 onwards (Ben / Brad / Craig).</li>
+          <li>Alex logs <b>soft drinks</b> as his equivalent drink points.</li>
+        </ul>
+      </div>
+
+      <div class="rules" style="margin-top:8px;">
+        <b>How to enter a drink:</b>
+        <ul>
+          <li>Open the form below.</li>
+          <li>Select your <b>Player Name</b> + <b>Segment</b> + <b>Drink Type</b>.</li>
+          <li>Hit <b>Submit</b>. That’s it — refresh if you want instant glory.</li>
+        </ul>
+      </div>
+
+      <div class="formWrap">
+        <iframe
+          title="Stagopa Drink Log Form"
+          src="https://docs.google.com/forms/d/e/1FAIpQLSdFrjugo2wxI_GVKMW2xTJUvlhv9qDhgePPYaZHWDi5Vynuag/viewform?embedded=true">
+        </iframe>
+      </div>
+    </div>
+  </details>
 
   <div class="bar">
     <div class="pill" id="status">Loading…</div>
