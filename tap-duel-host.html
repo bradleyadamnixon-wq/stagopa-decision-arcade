@@ -11,26 +11,67 @@ body{
   height:100vh; margin:0;
 }
 .wrap{ text-align:center; width:90%; }
-.big{ font-size:28px; font-weight:900; margin:10px 0; }
+.big{ font-size:26px; font-weight:900; margin:10px 0; }
+.timer{ font-size:48px; font-weight:1000; margin:10px 0; }
+button{
+  width:100%; padding:14px;
+  border-radius:14px; border:0;
+  font-size:18px; font-weight:900;
+  background:#ff3cac; color:white;
+}
+.lock{ opacity:0.6; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="big" id="code"></div>
+  <div class="timer" id="time">5.0</div>
+  <button id="start">START DUEL</button>
   <div id="scores"></div>
 </div>
 
 <script>
 const API = "PASTE_YOUR_SCRIPT_URL_HERE";
 const MATCH = Math.random().toString(36).substring(2,7).toUpperCase();
-document.getElementById("code").textContent = "MATCH CODE: " + MATCH;
+const ROUND = 5.0;
+let running = false;
+let startTime = 0;
+
+code.textContent = "MATCH CODE: " + MATCH;
+
+start.onclick = () => {
+  fetch(API, {
+    method:"POST",
+    body:JSON.stringify({ action:"start", match_code:MATCH })
+  });
+  running = true;
+  startTime = performance.now();
+  tick();
+};
+
+function tick(){
+  if(!running) return;
+  const left = Math.max(0, ROUND - (performance.now()-startTime)/1000);
+  time.textContent = left.toFixed(1);
+  if(left <= 0){
+    running = false;
+    time.textContent = "LOCKED";
+    fetch(API, {
+      method:"POST",
+      body:JSON.stringify({ action:"end", match_code:MATCH })
+    });
+  } else {
+    requestAnimationFrame(tick);
+  }
+}
 
 setInterval(()=>{
   fetch(API + "?match_code=" + MATCH)
     .then(r=>r.json())
     .then(data=>{
+      if(!data.length) return;
       scores.innerHTML = data.map(p =>
-        `<div>${p[1]}: ${p[2]}</div>`
+        `<div>${p[1]}: <b>${p[2]}</b></div>`
       ).join("");
     });
 },1000);
