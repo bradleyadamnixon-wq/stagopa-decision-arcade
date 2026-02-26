@@ -172,7 +172,7 @@
 /* =========================
    SETTINGS (rate-limit safe)
    ========================= */
-const AUTO_INTERVAL_MS = 60000;     // was 20s — now 60s to avoid 429
+const AUTO_INTERVAL_MS = 60000;     // refresh every 60s
 const RETRY_ON_429_MS  = 90000;     // wait 90s then retry once
 
 /* Google CSV links */
@@ -186,32 +186,9 @@ function proxify(url){
 const OVERALL_CSV = proxify(RAW_OVERALL_CSV);
 const SEGMENT_CSV = proxify(RAW_SEGMENT_CSV);
 
-/* ===== Squad rules ===== */
-const SQUAD_ALL  = ["Alex","Ben","Brad","Craig","Jack","Sam"];
-const SQUAD_CORE = ["Ben","Brad","Craig"];
-
-function normalizeTitle(s){
-  return String(s || "")
-    .toLowerCase()
-    .replace(/[–—]/g, "-")     // en dash / em dash -> hyphen
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function squadForSegment(segmentTitle){
-  const t = normalizeTitle(segmentTitle);
-
-  // Day 1 (Before 17:00) = everyone
-  if (t.startsWith("day 1") && t.includes("before 17:00")) return SQUAD_ALL;
-
-  // Day 1 – Part 2 (After 17:00) = core 3
-  if (t.startsWith("day 1") && (t.includes("after 17:00") || t.includes("part 2"))) return SQUAD_CORE;
-
-  // Days 2-4 = core 3
-  if (t.startsWith("day 2") || t.startsWith("day 3") || t.startsWith("day 4")) return SQUAD_CORE;
-
-  return SQUAD_CORE;
-}
+/* ===== Squad rules (your plan) ===== */
+const FULL_SQUAD = ["Alex","Ben","Brad","Craig","Jack","Sam"];
+const CORE_SQUAD = ["Ben","Brad","Craig"];
 
 /* ===== App wiring ===== */
 let autoOn = true;
@@ -224,7 +201,6 @@ const refreshBtn = document.getElementById("refresh");
 const autoBtn = document.getElementById("auto");
 
 refreshBtn.onclick = () => loadAll(true);
-
 autoBtn.onclick = () => {
   autoOn = !autoOn;
   autoBtn.textContent = "Auto: " + (autoOn ? "ON" : "OFF");
@@ -234,7 +210,6 @@ autoBtn.onclick = () => {
 
 function startAuto(){ stopAuto(); timer = setInterval(() => loadAll(false), AUTO_INTERVAL_MS); }
 function stopAuto(){ if (timer) clearInterval(timer); timer = null; }
-
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 function parseCSV(text){
@@ -262,8 +237,10 @@ async function fetchText(url, label, allowRetry=true){
 
   if (res.status === 429){
     if (!allowRetry) throw new Error(label + " fetch failed: 429");
+
     statusEl.textContent = "Rate limited (429). Cooling down…";
-    // Pause auto to reduce hammering
+
+    // Turn auto off to stop hammering
     autoOn = false;
     autoBtn.textContent = "Auto: OFF";
     autoBtn.classList.remove("primary");
@@ -336,7 +313,7 @@ function renderOverall(rows){
   overallArea.innerHTML = html;
 }
 
-/* BY SEGMENT: separate mini leaderboards, with squad rules + include 0s */
+/* BY SEGMENT: separate mini leaderboards with your squad rules + include 0s */
 function renderSegmentTables(rows){
   const headers = rows[0] || [];
   if (rows.length < 2 || headers.length < 2){
@@ -345,7 +322,6 @@ function renderSegmentTables(rows){
   }
 
   const headerLower = headers.map(h => (h || "").toLowerCase());
-
   let playerIdx = headerLower.findIndex(h => h.includes("player"));
   if (playerIdx === -1) playerIdx = 0;
 
@@ -357,6 +333,7 @@ function renderSegmentTables(rows){
       String(c.h).trim().length
     );
 
+  // Map of player -> row
   const rowByPlayer = new Map();
   rows.slice(1)
     .filter(r => (String(r[playerIdx] || "")).toLowerCase() !== "grand total")
@@ -365,16 +342,21 @@ function renderSegmentTables(rows){
   let html = "";
 
   segmentCols.forEach(seg => {
-    const allowed = squadForSegment(seg.h);
+    const segTitle = String(seg.h || "");
 
-    const data = allowed.map(name => {
+    // RULE:
+    // Day 1 (Before 17:00) => FULL squad
+    // Everything else (Day 1 Part 2, Day 2-4) => CORE squad
+    const allowedPlayers = segTitle.includes("Before 17:00") ? FULL_SQUAD : CORE_SQUAD;
+
+    const data = allowedPlayers.map(name => {
       const r = rowByPlayer.get(name);
       const pts = r ? toNumber(r[seg.i]) : 0;
       return { player: name, pts };
     }).sort((a,b) => b.pts - a.pts);
 
     html += `<div class="card" style="margin-bottom:12px">
-      <h2>${escapeHtml(seg.h)}</h2>
+      <h2>${escapeHtml(segTitle)}</h2>
       <table>
         <thead><tr><th class="rank">#</th><th>Player</th><th class="pts">Points</th></tr></thead>
         <tbody>`;
