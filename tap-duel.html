@@ -9,107 +9,158 @@
     body{
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       background:#05060a; color:#e9eefc;
-      display:flex; align-items:center; justify-content:center;
     }
-    .wrap{
-      width:min(680px,94vw); max-height:92vh; overflow:auto;
-      background:rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:18px;
-      padding:16px;
-      box-shadow:0 14px 30px rgba(0,0,0,0.45);
+    .top{
+      padding:12px;
+      display:flex; gap:10px; align-items:center; justify-content:center;
+      border-bottom:1px solid rgba(255,255,255,0.10);
+      background:rgba(255,255,255,0.04);
     }
-    .brand{
-      display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px;
-    }
-    .brand img{
-      width:62px; height:62px; border-radius:16px; object-fit:cover;
+    .top img{
+      width:44px; height:44px; border-radius:12px; object-fit:cover;
       border:1px solid rgba(255,255,255,0.14);
       background:rgba(0,0,0,0.25);
     }
-    h1{
-      margin:6px 0 6px; text-align:center;
-      font-size:18px; text-transform:uppercase; letter-spacing:0.08em;
+    .title{
+      text-align:center;
+      font-weight:900;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      font-size:14px;
+      opacity:0.95;
+    }
+    .meta{
+      text-align:center;
+      font-weight:900;
+      font-size:28px;
+      padding:10px 12px;
     }
     .sub{
-      margin:0 0 12px; text-align:center; font-size:13px; opacity:0.85;
+      text-align:center;
+      opacity:0.8;
+      font-size:12px;
+      padding:0 12px 10px;
     }
-    .row{
-      display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    .names{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      padding:0 12px 12px;
     }
     input{
-      width:100%; border-radius:14px; padding:10px 12px;
+      width:100%;
+      border-radius:14px;
+      padding:10px 12px;
       border:1px solid rgba(255,255,255,0.14);
-      background:rgba(255,255,255,0.06); color:#e9eefc; outline:none;
-      text-align:center; font-weight:700;
-    }
-    .stat{
-      text-align:center; padding:10px;
-      border-radius:14px; border:1px solid rgba(255,255,255,0.12);
       background:rgba(255,255,255,0.06);
+      color:#e9eefc;
+      outline:none;
+      text-align:center;
+      font-weight:800;
     }
-    .stat .v{
-      font-size:28px; font-weight:900; margin-top:2px;
+    .arena{
+      height: calc(100vh - 44px - 28px - 22px - 64px - 20px);
+      min-height: 320px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+    }
+    .side{
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      padding:12px;
+      border-top:1px solid rgba(255,255,255,0.08);
+    }
+    .side.left{ border-right:1px solid rgba(255,255,255,0.08); }
+    .label{
+      text-align:center;
+      font-weight:900;
+      opacity:0.85;
+    }
+    .score{
+      text-align:center;
+      font-size:44px;
+      font-weight:1000;
+      letter-spacing:0.02em;
+      margin-top:6px;
     }
     .tap{
-      width:100%; border:0; border-radius:16px;
+      width:100%;
+      border:0;
+      border-radius:18px;
       padding:18px 12px;
+      font-size:20px;
+      font-weight:1000;
+      letter-spacing:0.05em;
+      color:white;
       background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
-      color:#fff; font-weight:900; letter-spacing:0.04em;
-      cursor:pointer; touch-action:manipulation;
+      cursor:pointer;
+      touch-action:manipulation;
     }
     .tap:disabled{ opacity:0.5; cursor:not-allowed; }
-    .control{
-      width:100%; margin-top:10px;
-      border:0; border-radius:16px;
-      padding:14px 12px;
-      background:#111827;
-      color:#e9eefc; font-weight:800; cursor:pointer;
+    .controls{
+      padding:12px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      border-top:1px solid rgba(255,255,255,0.10);
+      background:rgba(255,255,255,0.04);
+    }
+    .btn{
+      border-radius:16px;
+      padding:12px 12px;
       border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06);
+      color:#e9eefc;
+      font-weight:900;
+      cursor:pointer;
     }
-    .timer{
-      text-align:center; font-size:34px; font-weight:900;
-      margin:10px 0;
-    }
-    .box{
-      margin-top:12px; padding:12px; border-radius:14px;
-      border:1px dashed rgba(255,255,255,0.18);
-      background:rgba(0,0,0,0.18);
-      text-align:center; min-height:54px;
-      display:flex; align-items:center; justify-content:center;
+    .msg{
+      grid-column:1 / -1;
+      text-align:center;
+      opacity:0.9;
+      font-size:13px;
+      padding-top:2px;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="brand">
-      <img src="stagopa-logo.png">
-      <img src="dctrigon-logo.png">
-    </div>
+  <div class="top">
+    <img src="stagopa-logo.png" alt="Stagopa">
+    <div class="title">Tap Duel — 5 seconds — loser takes the hit</div>
+    <img src="dctrigon-logo.png" alt="DC Trigon">
+  </div>
 
-    <h1>Tap Duel</h1>
-    <div class="sub">Two players. 5 seconds. Mash your own button. Loser takes the hit.</div>
+  <div class="meta"><span id="time">5.0</span>s</div>
+  <div class="sub">Two buttons. Two thumbs. No excuses.</div>
 
-    <div class="row">
-      <input id="p1" placeholder="Player 1">
-      <input id="p2" placeholder="Player 2">
-    </div>
+  <div class="names">
+    <input id="p1" placeholder="Player 1 (e.g., Ben)">
+    <input id="p2" placeholder="Player 2 (e.g., Craig)">
+  </div>
 
-    <div class="timer" id="time">5.0</div>
-
-    <div class="row">
-      <div class="stat"><div id="p1Label">P1</div><div class="v" id="s1">0</div></div>
-      <div class="stat"><div id="p2Label">P2</div><div class="v" id="s2">0</div></div>
-    </div>
-
-    <div class="row">
+  <div class="arena">
+    <div class="side left">
+      <div>
+        <div class="label" id="p1Label">Player 1</div>
+        <div class="score" id="s1">0</div>
+      </div>
       <button class="tap" id="tap1" disabled>TAP</button>
+    </div>
+
+    <div class="side">
+      <div>
+        <div class="label" id="p2Label">Player 2</div>
+        <div class="score" id="s2">0</div>
+      </div>
       <button class="tap" id="tap2" disabled>TAP</button>
     </div>
+  </div>
 
-    <button class="control" id="start">START DUEL</button>
-
-    <div class="box" id="msg">Enter names and press START.</div>
+  <div class="controls">
+    <button class="btn" id="start">START</button>
+    <button class="btn" id="reset">RESET</button>
+    <div class="msg" id="msg">Enter names, press START, then mash your own side.</div>
   </div>
 
 <script>
@@ -127,62 +178,65 @@
   const timeEl = document.getElementById("time");
   const tap1 = document.getElementById("tap1");
   const tap2 = document.getElementById("tap2");
-  const startBtn = document.getElementById("start");
   const msg = document.getElementById("msg");
 
-  function nameOr(el, fallback){
-    return el.value.trim() || fallback;
+  function labelSync(){
+    p1Label.textContent = p1.value.trim() || "Player 1";
+    p2Label.textContent = p2.value.trim() || "Player 2";
+  }
+
+  function resetAll(){
+    running = false;
+    s1 = 0; s2 = 0;
+    elS1.textContent = "0"; elS2.textContent = "0";
+    timeEl.textContent = ROUND.toFixed(1);
+    tap1.disabled = true; tap2.disabled = true;
+    msg.innerHTML = "Enter names, press START, then mash your own side.";
+    labelSync();
   }
 
   function start(){
-    p1Label.textContent = nameOr(p1,"Player 1");
-    p2Label.textContent = nameOr(p2,"Player 2");
+    labelSync();
     s1 = 0; s2 = 0;
     elS1.textContent = "0"; elS2.textContent = "0";
     running = true;
-    tap1.disabled = false;
-    tap2.disabled = false;
+    tap1.disabled = false; tap2.disabled = false;
     startTime = performance.now();
-    msg.innerHTML = "<b>DUEL LIVE</b> — GO.";
+    msg.innerHTML = "<b>LIVE</b> — GO.";
     tick();
   }
 
   function tick(){
-    if (!running) return;
-    const elapsed = (performance.now() - startTime)/1000;
-    const left = Math.max(0, ROUND - elapsed);
+    if(!running) return;
+    const left = Math.max(0, ROUND - (performance.now() - startTime)/1000);
     timeEl.textContent = left.toFixed(1);
-    if (left <= 0){
-      end();
-    } else {
-      requestAnimationFrame(tick);
-    }
+    if(left <= 0) end();
+    else requestAnimationFrame(tick);
   }
 
   function end(){
     running = false;
-    tap1.disabled = true;
-    tap2.disabled = true;
+    tap1.disabled = true; tap2.disabled = true;
 
-    let result;
-    if (s1 === s2){
-      result = "DRAW. Both are punished or rerun.";
-    } else if (s1 > s2){
-      result = `<b>${p1Label.textContent}</b> wins. <b>${p2Label.textContent}</b> loses.`;
-    } else {
-      result = `<b>${p2Label.textContent}</b> wins. <b>${p1Label.textContent}</b> loses.`;
-    }
+    let verdict = "";
+    if (s1 === s2) verdict = "DRAW. Rerun or both suffer.";
+    else if (s1 > s2) verdict = `<b>${p1Label.textContent}</b> wins. <b>${p2Label.textContent}</b> loses.`;
+    else verdict = `<b>${p2Label.textContent}</b> wins. <b>${p1Label.textContent}</b> loses.`;
 
-    msg.innerHTML = `
-      <b>RESULT</b><br>
-      ${p1Label.textContent}: ${s1} — ${p2Label.textContent}: ${s2}<br><br>
-      ${result}
-    `;
+    msg.innerHTML = `<b>RESULT</b> — ${p1Label.textContent}: ${s1} | ${p2Label.textContent}: ${s2}<br>${verdict}`;
   }
 
-  tap1.onclick = ()=>{ if(running){ s1++; elS1.textContent=s1; } };
-  tap2.onclick = ()=>{ if(running){ s2++; elS2.textContent=s2; } };
-  startBtn.onclick = start;
+  tap1.addEventListener("click", ()=>{ if(running){ s1++; elS1.textContent = s1; }});
+  tap2.addEventListener("click", ()=>{ if(running){ s2++; elS2.textContent = s2; }});
+  tap1.addEventListener("touchstart", (e)=>{ e.preventDefault(); if(running){ s1++; elS1.textContent = s1; }}, {passive:false});
+  tap2.addEventListener("touchstart", (e)=>{ e.preventDefault(); if(running){ s2++; elS2.textContent = s2; }}, {passive:false});
+
+  document.getElementById("start").addEventListener("click", start);
+  document.getElementById("reset").addEventListener("click", resetAll);
+  p1.addEventListener("input", labelSync);
+  p2.addEventListener("input", labelSync);
+
+  resetAll();
 </script>
 </body>
 </html>
