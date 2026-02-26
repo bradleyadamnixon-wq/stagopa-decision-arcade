@@ -180,6 +180,33 @@ function proxify(url){
 const OVERALL_CSV = proxify(RAW_OVERALL_CSV);
 const SEGMENT_CSV = proxify(RAW_SEGMENT_CSV);
 
+/* ===== Squad rules ===== */
+const SQUAD_ALL = ["Alex","Ben","Brad","Craig","Jack","Sam"];
+const SQUAD_CORE = ["Ben","Brad","Craig"];
+
+function squadForSegment(segmentTitle){
+  const t = String(segmentTitle || "").toLowerCase();
+
+  // Day 1 before 17:00 = everyone
+  if (t.includes("day 1") && (t.includes("before") || t.includes("till") || t.includes("until"))){
+    return SQUAD_ALL;
+  }
+
+  // Day 1 after 17:00 = core 3
+  if (t.includes("day 1") && t.includes("after")){
+    return SQUAD_CORE;
+  }
+
+  // Days 2-4 = core 3
+  if (t.includes("day 2") || t.includes("day 3") || t.includes("day 4")){
+    return SQUAD_CORE;
+  }
+
+  // Fallback: core (keeps it tight if a new segment appears)
+  return SQUAD_CORE;
+}
+
+/* ===== App wiring ===== */
 let autoOn = true;
 let timer = null;
 
@@ -286,7 +313,7 @@ function renderOverall(rows){
   overallArea.innerHTML = html;
 }
 
-/* BY SEGMENT: render separate mini leaderboards (one card per segment) */
+/* BY SEGMENT: separate mini leaderboards, with squad rules + include 0s for allowed players */
 function renderSegmentTables(rows){
   const headers = rows[0] || [];
   if (rows.length < 2 || headers.length < 2){
@@ -309,23 +336,25 @@ function renderSegmentTables(rows){
       String(c.h).trim().length
     );
 
-  const players = rows.slice(1)
+  // Map of player -> row for fast lookup
+  const rowByPlayer = new Map();
+  rows.slice(1)
     .filter(r => (String(r[playerIdx] || "")).toLowerCase() !== "grand total")
-    .filter(r => (String(r[playerIdx] || "")).trim().length);
+    .forEach(r => rowByPlayer.set(String(r[playerIdx] || "").trim(), r));
 
   let html = "";
 
   segmentCols.forEach(seg => {
-    const data = players
-      .map(r => ({
-        player: r[playerIdx],
-        pts: toNumber(r[seg.i])
-      }))
-      .filter(d => d.player && d.pts > 0)   /* show only players with points in that segment */
-      .sort((a,b) => b.pts - a.pts);
+    const allowed = squadForSegment(seg.h);
 
-    if (!data.length) return;
+    // Build rows for allowed players only (include 0s)
+    const data = allowed.map(name => {
+      const r = rowByPlayer.get(name);
+      const pts = r ? toNumber(r[seg.i]) : 0;
+      return { player: name, pts };
+    }).sort((a,b) => b.pts - a.pts);
 
+    // If absolutely nobody has points yet, still show table (with 0s)
     html += `<div class="card" style="margin-bottom:12px">
       <h2>${escapeHtml(seg.h)}</h2>
       <table>
