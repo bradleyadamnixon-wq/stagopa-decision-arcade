@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap Duel Player</title>
+<style>
+body{
+  background:#05060a; color:white;
+  font-family:system-ui;
+  display:flex; justify-content:center; align-items:center;
+  height:100vh; margin:0;
+}
+.wrap{ text-align:center; width:90%; }
+input,button{
+  width:100%; padding:16px;
+  border-radius:14px; border:0;
+  margin-bottom:10px;
+  font-size:18px; font-weight:800;
+}
+button{ background:#ff3cac; color:white; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <input id="code" placeholder="MATCH CODE">
+  <input id="name" placeholder="YOUR NAME">
+  <button onclick="join()">JOIN</button>
+  <button onclick="tap()">TAP</button>
+</div>
+
+<script>
+const API = "PASTE_YOUR_SCRIPT_URL_HERE";
+
+function join(){
+  fetch(API, {
+    method:"POST",
+    body:JSON.stringify({
+      action:"join",
+      match_code:code.value,
+      player:name.value
+    })
+  });
+}
+
+function tap(){
+  fetch(API, {
+    method:"POST",
+    body:JSON.stringify({
+      action:"tap",
+      match_code:code.value,
+      player:name.value
+    })
+  });
+}
+</script>
+</body>
+</html>
