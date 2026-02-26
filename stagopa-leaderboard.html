@@ -170,10 +170,10 @@
 
 <script>
 /* =========================================================
-   Published CSV endpoints (GVIZ is more reliable for fetch)
+   Published CSV endpoints (your confirmed working links)
    ========================================================= */
-const OVERALL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/gviz/tq?tqx=out:csv&gid=755088792";
-const SEGMENT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/gviz/tq?tqx=out:csv&gid=74730700";
+const OVERALL_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=755088792&single=true&output=csv";
+const SEGMENT_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=74730700&single=true&output=csv";
 
 /* ========================================================= */
 let autoOn = true;
@@ -235,11 +235,39 @@ function parseCSV(text){
   return rows.map(r => r.map(v => v.trim()));
 }
 
-async function fetchCSV(url, label){
-  const bust = (url.includes("?") ? "&" : "?") + "v=" + Date.now();
-  const res = await fetch(url + bust, { cache: "no-store" });
-  if (!res.ok) throw new Error(label + " fetch failed: " + res.status);
-  return await res.text();
+/* =========================================================
+   Reliable loader: loads CSV via hidden iframe (bypasses fetch blocks)
+   ========================================================= */
+function fetchCSVviaIframe(url, label){
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+
+    iframe.onload = () => {
+      try{
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const text = (doc && doc.body) ? doc.body.innerText : "";
+        document.body.removeChild(iframe);
+
+        if (!text || text.indexOf(",") === -1){
+          reject(new Error(label + " loaded but no CSV data found"));
+          return;
+        }
+        resolve(text);
+      } catch (e){
+        document.body.removeChild(iframe);
+        reject(new Error(label + " blocked by browser"));
+      }
+    };
+
+    iframe.onerror = () => {
+      document.body.removeChild(iframe);
+      reject(new Error(label + " failed to load"));
+    };
+
+    iframe.src = url;
+    document.body.appendChild(iframe);
+  });
 }
 
 function toNumber(x){
@@ -340,8 +368,8 @@ async function loadAll(showStatus){
     if (showStatus) statusEl.textContent = "Updating…";
 
     const [overallText, segmentText] = await Promise.all([
-      fetchCSV(OVERALL_CSV, "Overall"),
-      fetchCSV(SEGMENT_CSV, "By Segment")
+      fetchCSVviaIframe(OVERALL_CSV, "Overall"),
+      fetchCSVviaIframe(SEGMENT_CSV, "By Segment")
     ]);
 
     renderOverall(parseCSV(overallText));
@@ -351,7 +379,7 @@ async function loadAll(showStatus){
   } catch (e){
     statusEl.textContent = "Error loading tables";
     overallArea.innerHTML = `<div class="error">${escapeHtml(e.message)}</div>`;
-    segmentArea.innerHTML = `<div class="muted">Check that your sheets are published and the gid is correct.</div>`;
+    segmentArea.innerHTML = `<div class="muted">If this persists, re-publish the sheets via “Publish to web”.</div>`;
   }
 }
 
