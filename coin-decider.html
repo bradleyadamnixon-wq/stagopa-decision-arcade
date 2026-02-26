@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Coin Decider</title>
+  <style>
+    html, body { height:100%; margin:0; overflow:hidden; }
+    body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#05060a; color:#e9eefc;
+      display:flex; align-items:center; justify-content:center; }
+    .wrap{ width:min(520px,94vw); max-height:92vh; overflow:auto;
+      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+      border-radius:18px; padding:16px; box-shadow:0 14px 30px rgba(0,0,0,0.45); }
+    .brand{ display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px; }
+    .brand img{ width:62px; height:62px; border-radius:16px; object-fit:cover; border:1px solid rgba(255,255,255,0.14); background:rgba(0,0,0,0.25); }
+    h1{ margin:6px 0 6px; text-align:center; font-size:18px; text-transform:uppercase; letter-spacing:0.08em; }
+    .sub{ margin:0 0 12px; text-align:center; font-size:13px; opacity:0.85; }
+    button{
+      width:100%; border:0; border-radius:16px; padding:14px 12px;
+      background:linear-gradient(135deg, #ff3cac, #784ba0, #2b86c5);
+      color:#fff; font-weight:900; cursor:pointer;
+    }
+    .coin{
+      margin:12px auto 6px;
+      width:120px; height:120px; border-radius:999px;
+      border:2px solid rgba(255,255,255,0.2);
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; font-weight:900;
+      background:rgba(0,0,0,0.25);
+    }
+    .box{ margin-top:10px; padding:12px; border-radius:14px;
+      border:1px dashed rgba(255,255,255,0.18); background:rgba(0,0,0,0.18);
+      text-align:center; min-height:44px; display:flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <img src="stagopa-logo.png" alt="Stagopa League">
+      <img src="dctrigon-logo.png" alt="DC Trigon">
+    </div>
+    <h1>Coin Decider</h1>
+    <div class="sub">Fast ruling. Heads or Tails. No crying.</div>
+
+    <div class="coin" id="coin">—</div>
+    <button id="flip">FLIP 🪙</button>
+    <div class="box" id="msg">Awaiting flip…</div>
+  </div>
+
+  <script>
+    const coin = document.getElementById("coin");
+    const msg = document.getElementById("msg");
+    const flip = document.getElementById("flip");
+
+    flip.addEventListener("click", () => {
+      msg.textContent = "Flipping…";
+      let ticks = 0;
+      const anim = setInterval(() => {
+        coin.textContent = (Math.random() > 0.5) ? "HEADS" : "TAILS";
+        ticks++;
+        if (ticks >= 18){
+          clearInterval(anim);
+          const result = (Math.random() > 0.5) ? "HEADS" : "TAILS";
+          coin.textContent = result;
+          msg.innerHTML = `<b>DECISION:</b> ${result}`;
+        }
+      }, 60);
+    });
+  </script>
+</body>
+</html>
