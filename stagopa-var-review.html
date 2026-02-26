@@ -4,124 +4,241 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stagopa VAR Review</title>
 <style>
-html, body { height:100%; margin:0; overflow:hidden; }
-body{
-  background:#05060a;
-  color:#e9eefc;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  display:flex; align-items:center; justify-content:center;
-}
-.wrap{
-  width:min(560px,94vw);
-  max-height:92vh;
-  overflow:auto;
-  background:rgba(255,255,255,0.06);
-  border:1px solid rgba(255,255,255,0.12);
-  border-radius:18px;
-  padding:16px;
-  box-shadow:0 14px 30px rgba(0,0,0,0.45);
-  text-align:center;
-}
-.brand{
-  display:flex; gap:10px; justify-content:center; margin-bottom:10px;
-}
-.brand img{
-  width:64px; height:64px; border-radius:16px;
-  border:1px solid rgba(255,255,255,0.14);
-  background:#000;
-}
-h1{
-  margin:6px 0;
-  font-size:18px;
-  text-transform:uppercase;
-  letter-spacing:0.08em;
-}
-.sub{
-  font-size:13px;
-  opacity:0.85;
-  margin-bottom:14px;
-}
-.scan{
-  font-size:14px;
-  opacity:0.7;
-  height:24px;
-}
-button{
-  width:100%;
-  padding:16px;
-  border-radius:16px;
-  border:0;
-  background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
-  color:white;
-  font-weight:900;
-  font-size:16px;
-  cursor:pointer;
-  margin-top:12px;
-}
-.result{
-  margin-top:14px;
-  padding:14px;
-  border-radius:14px;
-  border:1px dashed rgba(255,255,255,0.2);
-  background:rgba(0,0,0,0.2);
-  font-size:16px;
-  font-weight:800;
-  min-height:48px;
-}
+  html, body { height:100%; margin:0; overflow:hidden; }
+  body{
+    background:#05060a;
+    color:#e9eefc;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .wrap{
+    width:min(560px,94vw);
+    max-height:92vh;
+    overflow:auto;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 14px 30px rgba(0,0,0,0.45);
+    text-align:center;
+  }
+  .brand{ display:flex; gap:10px; justify-content:center; margin-bottom:10px; }
+  .brand img{
+    width:64px; height:64px; border-radius:16px;
+    border:1px solid rgba(255,255,255,0.14);
+    background:#000;
+    object-fit:cover;
+  }
+  h1{
+    margin:6px 0;
+    font-size:18px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+  .sub{ font-size:13px; opacity:0.85; margin-bottom:10px; }
+
+  .picker{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin:10px 0 12px;
+  }
+  .picker button{
+    padding:12px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.14);
+    background:rgba(255,255,255,0.06);
+    color:#e9eefc;
+    font-weight:900;
+    cursor:pointer;
+  }
+  .picker button.active{
+    background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
+    border:0;
+  }
+
+  .mediaBox{
+    width:100%;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.20);
+    overflow:hidden;
+    margin:10px 0;
+  }
+  .mediaBox img{
+    width:100%;
+    height:200px;
+    object-fit:cover;
+    display:block;
+  }
+
+  .scan{
+    font-size:14px;
+    opacity:0.75;
+    height:22px;
+    margin-top:6px;
+  }
+
+  .mainBtn{
+    width:100%;
+    padding:16px;
+    border-radius:16px;
+    border:0;
+    background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
+    color:white;
+    font-weight:900;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:12px;
+  }
+  .mainBtn:disabled{ opacity:0.55; cursor:not-allowed; }
+
+  .result{
+    margin-top:14px;
+    padding:14px;
+    border-radius:14px;
+    border:1px dashed rgba(255,255,255,0.2);
+    background:rgba(0,0,0,0.2);
+    font-size:16px;
+    font-weight:900;
+    min-height:52px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .rules{
+    text-align:left;
+    margin-top:12px;
+    font-size:12px;
+    opacity:0.8;
+    line-height:1.35;
+  }
+  .rules b{ opacity:0.95; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="brand">
-    <img src="stagopa-logo.png">
-    <img src="dctrigon-logo.png">
+    <img src="stagopa-logo.png" alt="Stagopa League">
+    <img src="dctrigon-logo.png" alt="DC Trigon">
   </div>
 
   <h1>Stagopa VAR Review</h1>
-  <div class="sub">Incident under review. Decision is final.</div>
+  <div class="sub">Select the incident type. Decision is final.</div>
+
+  <div class="picker">
+    <button id="btnFoul" class="active" onclick="setMode('foul')">🟥 FOUL</button>
+    <button id="btnOff" onclick="setMode('offside')">🚩 OFFSIDE</button>
+  </div>
+
+  <div class="mediaBox">
+    <img id="media" src="var-check.png" alt="VAR media">
+  </div>
 
   <div class="scan" id="scan">Awaiting incident…</div>
 
-  <button onclick="review()">REVIEW INCIDENT</button>
+  <button class="mainBtn" id="reviewBtn" onclick="review()">REVIEW INCIDENT</button>
 
   <div class="result" id="result">—</div>
+
+  <div class="rules">
+    <b>Pick FOUL</b> if it’s about contact/behaviour/chaos:
+    pushing, spilling, refusing a task, arguing, being a menace.<br><br>
+    <b>Pick OFFSIDE</b> if it’s about unfair advantage/cheating the system:
+    skipping queues, dodging a round, loopholes, timing/positioning nonsense.
+  </div>
 </div>
 
 <script>
-const scans = [
-  "Checking offside lines…",
-  "Reviewing contact…",
-  "Enhancing footage…",
-  "Consulting The Gaffer…",
-  "Running corruption check…",
-  "VAR system unstable…",
-  "Angle inconclusive…"
-];
+  // --- CONFIG: filenames ---
+  const ASSETS = {
+    defaultPng: "var-check.png",
+    checkingGif: "var-checking.gif",
 
-const decisions = [
-  "NO FOUL — PLAY ON",
-  "FOUL — BUY A ROUND 🍺",
-  "RED CARD — TASK ASSIGNED",
-  "YELLOW CARD — DRINK PENALTY",
-  "HANDBALL — FINED",
-  "OFFSIDE — DRINK TWICE",
-  "SERIOUS FOUL PLAY — DOUBLE TASK"
-];
+    // FOUL outcomes
+    foul: [
+      { label: "No Foul — Play on", gif: "var-no-foul-play-on.gif" },
+      { label: "Foul — Drink your drink", gif: "var-foul-drink-your-drink.gif" },
+      { label: "Yellow Card — Drink your drink and do a shot", gif: "var-yellow-drink-and-shot.gif" },
+      { label: "Red Card — Drink your drink and 2 shots", gif: "var-red-drink-and-2shots.gif" }
+    ],
 
-function review(){
-  result.textContent = "—";
-  let i = 0;
-  const interval = setInterval(()=>{
-    scan.textContent = scans[i % scans.length];
-    i++;
-    if(i > 8){
-      clearInterval(interval);
-      const decision = decisions[Math.floor(Math.random()*decisions.length)];
-      scan.textContent = "Decision confirmed.";
-      result.textContent = decision;
-    }
-  }, 500);
-}
+    // OFFSIDE outcomes
+    offside: [
+      { label: "Offside — Drink your drink", gif: "var-offside-drink-your-drink.gif" },
+      { label: "Not Offside — Goal Awarded", gif: "var-not-offside-goal-awarded.gif" }
+    ]
+  };
+
+  let mode = "foul";
+  let reviewing = false;
+
+  const mediaEl = document.getElementById("media");
+  const scanEl = document.getElementById("scan");
+  const resultEl = document.getElementById("result");
+  const btn = document.getElementById("reviewBtn");
+
+  function setMode(m){
+    if (reviewing) return; // no switching mid-review
+    mode = m;
+
+    document.getElementById("btnFoul").classList.toggle("active", mode === "foul");
+    document.getElementById("btnOff").classList.toggle("active", mode === "offside");
+
+    // reset to VAR CHECK PNG
+    mediaEl.src = ASSETS.defaultPng;
+    scanEl.textContent = "Awaiting incident…";
+    resultEl.textContent = "—";
+  }
+
+  function pickOutcome(){
+    const list = (mode === "foul") ? ASSETS.foul : ASSETS.offside;
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function review(){
+    if (reviewing) return;
+    reviewing = true;
+
+    btn.disabled = true;
+    resultEl.textContent = "—";
+
+    // show checking gif for ~3 seconds
+    scanEl.textContent = (mode === "foul")
+      ? "Checking contact…"
+      : "Drawing offside lines…";
+
+    mediaEl.src = ASSETS.checkingGif;
+
+    const outcome = pickOutcome();
+
+    setTimeout(() => {
+      // show outcome gif + label
+      mediaEl.src = outcome.gif;
+      scanEl.textContent = "Decision confirmed.";
+      resultEl.textContent = outcome.label;
+
+      btn.disabled = false;
+      reviewing = false;
+    }, 3000);
+  }
+
+  // Fallback handling: if assets missing, show a helpful message
+  mediaEl.addEventListener("error", () => {
+    // show a plain placeholder if any asset missing
+    mediaEl.style.display = "none";
+    const box = mediaEl.parentElement;
+    box.style.padding = "16px";
+    box.innerHTML = `<div style="opacity:0.85;font-weight:800;">
+      Missing VAR media file.<br>
+      Expected: <b>${ASSETS.defaultPng}</b> and <b>${ASSETS.checkingGif}</b> plus outcome GIFs.<br>
+      Upload them to the repo root next to this HTML.
+    </div>`;
+  });
+
+  // init
+  setMode("foul");
 </script>
 </body>
 </html>
