@@ -169,22 +169,13 @@
 </div>
 
 <script>
-/* =========================================================
-   Your published CSV links (Google)
-   ========================================================= */
 const RAW_OVERALL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=755088792&single=true&output=csv";
 const RAW_SEGMENT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=74730700&single=true&output=csv";
 
-/* =========================================================
-   Proxy to make fetch reliable from GitHub Pages
-   ========================================================= */
-function proxify(url){
-  return "https://r.jina.ai/http://" + url.replace(/^https?:\/\//, "");
-}
+function proxify(url){ return "https://r.jina.ai/http://" + url.replace(/^https?:\/\//, ""); }
 const OVERALL_CSV = proxify(RAW_OVERALL_CSV);
 const SEGMENT_CSV = proxify(RAW_SEGMENT_CSV);
 
-/* ========================================================= */
 let autoOn = true;
 let timer = null;
 
@@ -195,7 +186,6 @@ const refreshBtn = document.getElementById("refresh");
 const autoBtn = document.getElementById("auto");
 
 refreshBtn.onclick = () => loadAll(true);
-
 autoBtn.onclick = () => {
   autoOn = !autoOn;
   autoBtn.textContent = "Auto: " + (autoOn ? "ON" : "OFF");
@@ -203,44 +193,25 @@ autoBtn.onclick = () => {
   if (autoOn) startAuto(); else stopAuto();
 };
 
-function startAuto(){
-  stopAuto();
-  timer = setInterval(() => loadAll(false), 20000);
-}
-function stopAuto(){
-  if (timer) clearInterval(timer);
-  timer = null;
-}
+function startAuto(){ stopAuto(); timer = setInterval(() => loadAll(false), 20000); }
+function stopAuto(){ if (timer) clearInterval(timer); timer = null; }
 
 function parseCSV(text){
   const rows = [];
   let cur = "", inQuotes = false;
   let row = [];
-
   for (let i=0; i<text.length; i++){
-    const c = text[i];
-    const next = text[i+1];
-
+    const c = text[i], next = text[i+1];
     if (c === '"' && inQuotes && next === '"'){ cur += '"'; i++; continue; }
     if (c === '"'){ inQuotes = !inQuotes; continue; }
-
-    if (c === ',' && !inQuotes){
-      row.push(cur); cur = ""; continue;
-    }
+    if (c === ',' && !inQuotes){ row.push(cur); cur=""; continue; }
     if ((c === '\n' || c === '\r') && !inQuotes){
-      if (cur.length || row.length){
-        row.push(cur); cur = "";
-        rows.push(row);
-        row = [];
-      }
+      if (cur.length || row.length){ row.push(cur); cur=""; rows.push(row); row=[]; }
       continue;
     }
     cur += c;
   }
-  if (cur.length || row.length){
-    row.push(cur);
-    rows.push(row);
-  }
+  if (cur.length || row.length){ row.push(cur); rows.push(row); }
   return rows.map(r => r.map(v => v.trim()));
 }
 
@@ -251,24 +222,15 @@ async function fetchText(url, label){
   return await res.text();
 }
 
-/* =========================
-   FINAL PATCH: extract true CSV starting at the real header row
-   ========================= */
 function extractCSVFromProxy(text, requiredHeaderWords){
   const lines = String(text).split(/\r?\n/);
-
   for (let i = 0; i < lines.length; i++){
     const line = lines[i].trim();
     const lower = line.toLowerCase();
-
     const looksCSV = line.includes(",") && line.length > 3;
     const hasRequired = requiredHeaderWords.every(w => lower.includes(w));
-
-    if (looksCSV && hasRequired){
-      return lines.slice(i).join("\n");
-    }
+    if (looksCSV && hasRequired) return lines.slice(i).join("\n");
   }
-
   const firstComma = lines.findIndex(l => l.includes(","));
   return firstComma >= 0 ? lines.slice(firstComma).join("\n") : String(text);
 }
@@ -277,32 +239,27 @@ function toNumber(x){
   const n = Number(String(x).replace(/[^\d.-]/g,""));
   return Number.isFinite(n) ? n : 0;
 }
-
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, s => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[s]));
 }
 
+/* ===== OVERALL: force numeric sort ===== */
 function renderOverall(rows){
-  if (!rows.length){
-    overallArea.innerHTML = `<div class="muted">No entries yet.</div>`;
-    return;
-  }
-
-  const header = rows[0].map(h => (h || "").toLowerCase());
+  const header = (rows[0] || []).map(h => (h || "").toLowerCase());
   const playerIdx = header.findIndex(h => h.includes("player"));
   const ptsIdx = header.findIndex(h => h.includes("total") || h.includes("points"));
 
   if (playerIdx === -1 || ptsIdx === -1){
-    overallArea.innerHTML = `<div class="error">Overall CSV headers not found. Expected columns like "Player" and "Total Points".</div>`;
+    overallArea.innerHTML = `<div class="error">Overall CSV headers not found.</div>`;
     return;
   }
 
   const data = rows.slice(1)
-    .filter(r => r[playerIdx])
+    .filter(r => (r[playerIdx] || "").trim().length)
     .map(r => ({ player: r[playerIdx], pts: toNumber(r[ptsIdx]) }))
-    .sort((a,b) => b.pts - a.pts);
+    .sort((a,b) => b.pts - a.pts);   // ✅ sorted
 
   if (!data.length){
     overallArea.innerHTML = `<div class="muted">No entries yet.</div>`;
@@ -311,7 +268,6 @@ function renderOverall(rows){
 
   let html = `<table>
     <thead><tr><th class="rank">#</th><th>Player</th><th class="pts">Points</th></tr></thead><tbody>`;
-
   data.forEach((d, i) => {
     html += `<tr class="${i===0 ? "topRow" : ""}">
       <td class="rank">${i+1}</td>
@@ -319,11 +275,11 @@ function renderOverall(rows){
       <td class="pts">${d.pts}</td>
     </tr>`;
   });
-
   html += `</tbody></table>`;
   overallArea.innerHTML = html;
 }
 
+/* ===== BY SEGMENT: sort rows by Grand Total (or last numeric column) ===== */
 function renderSegments(rows){
   if (rows.length < 2){
     segmentArea.innerHTML = `<div class="muted">No segment data yet.</div>`;
@@ -333,19 +289,22 @@ function renderSegments(rows){
   const headers = rows[0];
   const headerLower = headers.map(h => (h || "").toLowerCase());
   let playerIdx = headerLower.findIndex(h => h.includes("player"));
-  if (playerIdx === -1) playerIdx = 0; // fallback
+  if (playerIdx === -1) playerIdx = 0;
+
+  // Find Grand Total column if present, else use last column
+  let grandIdx = headerLower.findIndex(h => h.includes("grand"));
+  if (grandIdx === -1) grandIdx = headers.length - 1;
 
   const usableCols = headers
     .map((h, idx) => ({ h, idx }))
     .filter(x => x.h && x.h.trim().length);
 
-  const dataRows = rows.slice(1)
-    .filter(r => (r[playerIdx] || "").toLowerCase() !== "grand total");
+  let dataRows = rows.slice(1)
+    .filter(r => (r[playerIdx] || "").toLowerCase() !== "grand total")
+    .filter(r => (r[playerIdx] || "").trim().length);
 
-  if (!dataRows.length){
-    segmentArea.innerHTML = `<div class="muted">No entries yet.</div>`;
-    return;
-  }
+  // ✅ sort by grand total desc
+  dataRows = dataRows.sort((a,b) => toNumber(b[grandIdx]) - toNumber(a[grandIdx]));
 
   let html = `<table><thead><tr>`;
   usableCols.forEach((c) => {
@@ -354,8 +313,8 @@ function renderSegments(rows){
   });
   html += `</tr></thead><tbody>`;
 
-  dataRows.forEach(r => {
-    html += `<tr>`;
+  dataRows.forEach((r, i) => {
+    html += `<tr class="${i===0 ? "topRow" : ""}">`;
     usableCols.forEach(c => {
       const val = r[c.idx] ?? "";
       const isPlayer = c.idx === playerIdx;
@@ -378,7 +337,6 @@ async function loadAll(showStatus){
       fetchText(SEGMENT_CSV, "By Segment")
     ]);
 
-    // FINAL PATCH applied here
     const overallCSV = extractCSVFromProxy(overallRaw, ["player", "total"]);
     const segmentCSV = extractCSVFromProxy(segmentRaw, ["player"]);
 
@@ -389,7 +347,7 @@ async function loadAll(showStatus){
   } catch (e){
     statusEl.textContent = "Error loading tables";
     overallArea.innerHTML = `<div class="error">${escapeHtml(e.message)}</div>`;
-    segmentArea.innerHTML = `<div class="muted">If this persists, check Publish-to-web is enabled for both sheets.</div>`;
+    segmentArea.innerHTML = `<div class="muted">Check Publish-to-web is enabled for both sheets.</div>`;
   }
 }
 
