@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Task Punisher</title>
+  <style>
+    html, body { height:100%; margin:0; overflow:hidden; }
+    body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#05060a; color:#e9eefc;
+      display:flex; align-items:center; justify-content:center; }
+    .wrap{ width:min(560px,94vw); max-height:92vh; overflow:auto;
+      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+      border-radius:18px; padding:16px; box-shadow:0 14px 30px rgba(0,0,0,0.45); }
+    .brand{ display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px; }
+    .brand img{ width:62px; height:62px; border-radius:16px; object-fit:cover; border:1px solid rgba(255,255,255,0.14); background:rgba(0,0,0,0.25); }
+    h1{ margin:6px 0 6px; text-align:center; font-size:18px; text-transform:uppercase; letter-spacing:0.08em; }
+    .sub{ margin:0 0 12px; text-align:center; font-size:13px; opacity:0.85; }
+    input{
+      width:100%; border-radius:14px; padding:10px 12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06); color:#e9eefc; outline:none;
+    }
+    .timer{
+      text-align:center; font-weight:900; font-size:54px;
+      margin:12px 0;
+      letter-spacing:0.04em;
+    }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    button{
+      width:100%; border:0; border-radius:16px; padding:14px 12px;
+      background:linear-gradient(135deg, #ff3cac, #784ba0, #2b86c5);
+      color:#fff; font-weight:900; cursor:pointer;
+    }
+    .ghost{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.14);
+      color:#e9eefc;
+    }
+    .box{ margin-top:12px; padding:12px; border-radius:14px;
+      border:1px dashed rgba(255,255,255,0.18); background:rgba(0,0,0,0.18);
+      text-align:center; min-height:54px; display:flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <img src="stagopa-logo.png" alt="Stagopa League">
+      <img src="dctrigon-logo.png" alt="DC Trigon">
+    </div>
+    <h1>Task Punisher</h1>
+    <div class="sub">Press START. Everyone watches. One person presses STOP closest to 0.00 = loser.</div>
+
+    <input id="name" placeholder="Who pressed STOP? (type name before you press STOP)">
+
+    <div class="timer" id="t">10.00</div>
+
+    <div class="row">
+      <button id="start">START</button>
+      <button id="stop" class="ghost" disabled>STOP</button>
+    </div>
+
+    <div class="box" id="msg">Timer starts at 10.00 and counts down. Closest to 0.00 gets punished.</div>
+  </div>
+
+  <script>
+    let running = false;
+    let startTime = 0;
+    let duration = 0;
+
+    const elT = document.getElementById("t");
+    const elMsg = document.getElementById("msg");
+    const elName = document.getElementById("name");
+    const btnStart = document.getElementById("start");
+    const btnStop = document.getElementById("stop");
+
+    function setMsg(html){ elMsg.innerHTML = html; }
+
+    function startGame(){
+      if (running) return;
+      running = true;
+
+      // randomize duration slightly to prevent "counting"
+      duration = 10 + (Math.random() * 3); // 10.00 to 13.00 seconds
+      startTime = performance.now();
+
+      btnStop.disabled = false;
+      btnStop.classList.remove("ghost");
+
+      setMsg(`<b>LIVE</b> — STOP it near 0.00. No bottles thrown.`);
+
+      tick();
+    }
+
+    function tick(){
+      if (!running) return;
+      const elapsed = (performance.now() - startTime) / 1000;
+      const left = Math.max(0, duration - elapsed);
+      elT.textContent = left.toFixed(2);
+      requestAnimationFrame(tick);
+      if (left <= 0){
+        // nobody pressed stop in time
+        running = false;
+        btnStop.disabled = true;
+        btnStop.classList.add("ghost");
+        setMsg(`<b>FAILURE:</b> nobody pressed STOP. Group punishment applies.`);
+      }
+    }
+
+    function stopGame(){
+      if (!running) return;
+      running = false;
+
+      const elapsed = (performance.now() - startTime) / 1000;
+      const left = Math.max(0, duration - elapsed);
+
+      btnStop.disabled = true;
+      btnStop.classList.add("ghost");
+
+      const who = (elName.value || "").trim() || "Someone";
+      setMsg(`<b>STOP REGISTERED:</b> <b>${who}</b><br>Stopped at <b>${left.toFixed(2)}</b> seconds.<br><br><b>Task assigned.</b>`);
+    }
+
+    btnStart.addEventListener("click", startGame);
+    btnStop.addEventListener("click", stopGame);
+  </script>
+</body>
+</html>
