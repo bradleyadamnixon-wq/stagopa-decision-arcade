@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Stagopa Leaderboard</title>
+<style>
+  html, body { height:100%; margin:0; overflow:hidden; }
+  body{
+    background:#05060a;
+    color:#e9eefc;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .wrap{
+    width:min(900px,96vw);
+    height:92vh;
+    overflow:auto;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 14px 30px rgba(0,0,0,0.45);
+  }
+  .brand{
+    display:flex; gap:10px; justify-content:center; align-items:center;
+    margin-bottom:10px;
+  }
+  .brand img{
+    width:56px; height:56px; border-radius:14px;
+    border:1px solid rgba(255,255,255,0.14);
+    background:#000;
+    object-fit:cover;
+  }
+  h1{
+    margin:6px 0 2px;
+    text-align:center;
+    font-size:18px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+  .sub{
+    text-align:center;
+    font-size:13px;
+    opacity:0.8;
+    margin-bottom:12px;
+  }
+  .bar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    margin:10px 0 14px;
+  }
+  .pill{
+    padding:8px 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,0.14);
+    background:rgba(255,255,255,0.06);
+    font-weight:800;
+    font-size:12px;
+    opacity:0.9;
+  }
+  .btn{
+    padding:10px 12px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.14);
+    background:rgba(255,255,255,0.06);
+    color:#e9eefc;
+    font-weight:900;
+    cursor:pointer;
+  }
+  .btn.primary{
+    border:0;
+    background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
+    color:white;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  @media (min-width: 860px){
+    .grid{ grid-template-columns:1fr 1fr; }
+  }
+  .card{
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.18);
+    padding:12px;
+  }
+  .card h2{
+    margin:0 0 10px;
+    font-size:14px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    opacity:0.95;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  th, td{
+    padding:8px 8px;
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    text-align:left;
+    vertical-align:middle;
+  }
+  th{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    opacity:0.8;
+  }
+  .rank{
+    width:44px;
+    text-align:center;
+    font-weight:900;
+    opacity:0.9;
+  }
+  .pts{
+    text-align:right;
+    font-weight:900;
+  }
+  .topRow td{
+    background:rgba(255,255,255,0.06);
+  }
+  .muted{ opacity:0.75; }
+  .error{
+    padding:12px;
+    border-radius:14px;
+    border:1px dashed rgba(255,255,255,0.2);
+    background:rgba(0,0,0,0.25);
+    font-weight:800;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="stagopa-logo.png" alt="Stagopa">
+    <img src="dctrigon-logo.png" alt="DC Trigon">
+  </div>
+
+  <h1>Stagopa League Leaderboard</h1>
+  <div class="sub">Live points table. One drink = one log. No mercy.</div>
+
+  <div class="bar">
+    <div class="pill" id="status">Loading…</div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn" id="refresh">Refresh</button>
+      <button class="btn primary" id="auto">Auto: ON</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Overall</h2>
+      <div id="overallArea" class="muted">Loading…</div>
+    </div>
+
+    <div class="card">
+      <h2>By Segment</h2>
+      <div id="segmentArea" class="muted">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   1) PASTE YOUR PUBLISHED CSV LINKS HERE
+   ========================================================= */
+const OVERALL_CSV  = "PASTE_OVERALL_CSV_LINK_HERE";
+const SEGMENT_CSV  = "PASTE_BY_SEGMENT_CSV_LINK_HERE";
+
+/* ========================================================= */
+let autoOn = true;
+let timer = null;
+
+const statusEl = document.getElementById("status");
+const overallArea = document.getElementById("overallArea");
+const segmentArea = document.getElementById("segmentArea");
+const refreshBtn = document.getElementById("refresh");
+const autoBtn = document.getElementById("auto");
+
+refreshBtn.onclick = () => loadAll(true);
+
+autoBtn.onclick = () => {
+  autoOn = !autoOn;
+  autoBtn.textContent = "Auto: " + (autoOn ? "ON" : "OFF");
+  autoBtn.classList.toggle("primary", autoOn);
+  if (autoOn) startAuto(); else stopAuto();
+};
+
+function startAuto(){
+  stopAuto();
+  timer = setInterval(() => loadAll(false), 20000); // every 20s
+}
+function stopAuto(){
+  if (timer) clearInterval(timer);
+  timer = null;
+}
+
+function parseCSV(text){
+  // Simple CSV parser that handles quoted values
+  const rows = [];
+  let cur = "", inQuotes = false;
+  let row = [];
+
+  for (let i=0; i<text.length; i++){
+    const c = text[i];
+    const next = text[i+1];
+
+    if (c === '"' && inQuotes && next === '"'){ cur += '"'; i++; continue; }
+    if (c === '"'){ inQuotes = !inQuotes; continue; }
+
+    if (c === ',' && !inQuotes){
+      row.push(cur); cur = ""; continue;
+    }
+    if ((c === '\n' || c === '\r') && !inQuotes){
+      if (cur.length || row.length){
+        row.push(cur); cur = "";
+        rows.push(row);
+        row = [];
+      }
+      continue;
+    }
+    cur += c;
+  }
+  if (cur.length || row.length){
+    row.push(cur);
+    rows.push(row);
+  }
+  return rows.map(r => r.map(v => v.trim()));
+}
+
+async function fetchCSV(url){
+  const bust = (url.includes("?") ? "&" : "?") + "v=" + Date.now();
+  const res = await fetch(url + bust, { cache: "no-store" });
+  if (!res.ok) throw new Error("Fetch failed: " + res.status);
+  return await res.text();
+}
+
+function toNumber(x){
+  const n = Number(String(x).replace(/[^\d.-]/g,""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function renderOverall(rows){
+  // Expect header row: Player | Total Points
+  const header = rows[0].map(h => h.toLowerCase());
+  const playerIdx = header.findIndex(h => h.includes("player"));
+  const ptsIdx = header.findIndex(h => h.includes("total") || h.includes("points"));
+
+  if (playerIdx === -1 || ptsIdx === -1){
+    overallArea.innerHTML = `<div class="error">Overall CSV headers not found. Expected columns like "Player" and "Total Points".</div>`;
+    return;
+  }
+
+  const data = rows.slice(1)
+    .filter(r => r[playerIdx])
+    .map(r => ({
+      player: r[playerIdx],
+      pts: toNumber(r[ptsIdx])
+    }))
+    .sort((a,b) => b.pts - a.pts);
+
+  if (!data.length){
+    overallArea.innerHTML = `<div class="muted">No entries yet.</div>`;
+    return;
+  }
+
+  let html = `<table>
+    <thead><tr><th class="rank">#</th><th>Player</th><th class="pts">Points</th></tr></thead><tbody>`;
+
+  data.forEach((d, i) => {
+    const top = (i === 0) ? "topRow" : "";
+    html += `<tr class="${top}">
+      <td class="rank">${i+1}</td>
+      <td><b>${escapeHtml(d.player)}</b></td>
+      <td class="pts">${d.pts}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  overallArea.innerHTML = html;
+}
+
+function renderSegments(rows){
+  // Pivot CSV: first row headers like Player Name | Day 1... | Day 2 | Grand Total
+  if (rows.length < 2){
+    segmentArea.innerHTML = `<div class="muted">No segment data yet.</div>`;
+    return;
+  }
+
+  const headers = rows[0];
+  const playerIdx = headers.findIndex(h => h.toLowerCase().includes("player"));
+  if (playerIdx === -1){
+    segmentArea.innerHTML = `<div class="error">By Segment CSV headers not found (missing Player column).</div>`;
+    return;
+  }
+
+  // Build table as-is, but remove blank trailing columns
+  const usableCols = headers
+    .map((h, idx) => ({ h, idx }))
+    .filter(x => x.h && x.h.trim().length);
+
+  // Hide "Grand total" row if present
+  const dataRows = rows.slice(1)
+    .filter(r => (r[playerIdx] || "").toLowerCase() !== "grand total");
+
+  if (!dataRows.length){
+    segmentArea.innerHTML = `<div class="muted">No entries yet.</div>`;
+    return;
+  }
+
+  let html = `<table><thead><tr>`;
+  usableCols.forEach((c) => {
+    const label = c.idx === playerIdx ? "Player" : c.h;
+    html += `<th>${escapeHtml(label)}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  dataRows.forEach(r => {
+    html += `<tr>`;
+    usableCols.forEach(c => {
+      const val = r[c.idx] ?? "";
+      const isPlayer = c.idx === playerIdx;
+      const isNum = !isPlayer;
+      html += `<td ${isNum ? 'class="pts"' : ""}>${isPlayer ? "<b>"+escapeHtml(val)+"</b>" : escapeHtml(val || "0")}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  segmentArea.innerHTML = html;
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[s]));
+}
+
+async function loadAll(showStatus){
+  try{
+    if (showStatus) statusEl.textContent = "Updating…";
+
+    if (OVERALL_CSV.includes("PASTE_") || SEGMENT_CSV.includes("PASTE_")){
+      statusEl.textContent = "Paste your CSV links into the HTML first.";
+      overallArea.innerHTML = `<div class="error">Open <b>stagopa-leaderboard.html</b> and paste your published CSV URLs into OVERALL_CSV and SEGMENT_CSV.</div>`;
+      segmentArea.innerHTML = `<div class="muted">—</div>`;
+      return;
+    }
+
+    const [overallText, segmentText] = await Promise.all([
+      fetchCSV(OVERALL_CSV),
+      fetchCSV(SEGMENT_CSV)
+    ]);
+
+    renderOverall(parseCSV(overallText));
+    renderSegments(parseCSV(segmentText));
+
+    statusEl.textContent = "Last update: " + new Date().toLocaleTimeString();
+  } catch (e){
+    statusEl.textContent = "Error loading tables";
+    overallArea.innerHTML = `<div class="error">${escapeHtml(e.message)}</div>`;
+    segmentArea.innerHTML = `<div class="muted">Check that your sheets are published as CSV and accessible.</div>`;
+  }
+}
+
+loadAll(true);
+startAuto();
+</script>
+</body>
+</html>
