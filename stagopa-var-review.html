@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stagopa VAR Review</title>
+<style>
+html, body { height:100%; margin:0; overflow:hidden; }
+body{
+  background:#05060a;
+  color:#e9eefc;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  display:flex; align-items:center; justify-content:center;
+}
+.wrap{
+  width:min(560px,94vw);
+  max-height:92vh;
+  overflow:auto;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 14px 30px rgba(0,0,0,0.45);
+  text-align:center;
+}
+.brand{
+  display:flex; gap:10px; justify-content:center; margin-bottom:10px;
+}
+.brand img{
+  width:64px; height:64px; border-radius:16px;
+  border:1px solid rgba(255,255,255,0.14);
+  background:#000;
+}
+h1{
+  margin:6px 0;
+  font-size:18px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.sub{
+  font-size:13px;
+  opacity:0.85;
+  margin-bottom:14px;
+}
+.scan{
+  font-size:14px;
+  opacity:0.7;
+  height:24px;
+}
+button{
+  width:100%;
+  padding:16px;
+  border-radius:16px;
+  border:0;
+  background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
+  color:white;
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:12px;
+}
+.result{
+  margin-top:14px;
+  padding:14px;
+  border-radius:14px;
+  border:1px dashed rgba(255,255,255,0.2);
+  background:rgba(0,0,0,0.2);
+  font-size:16px;
+  font-weight:800;
+  min-height:48px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="stagopa-logo.png">
+    <img src="dctrigon-logo.png">
+  </div>
+
+  <h1>Stagopa VAR Review</h1>
+  <div class="sub">Incident under review. Decision is final.</div>
+
+  <div class="scan" id="scan">Awaiting incident…</div>
+
+  <button onclick="review()">REVIEW INCIDENT</button>
+
+  <div class="result" id="result">—</div>
+</div>
+
+<script>
+const scans = [
+  "Checking offside lines…",
+  "Reviewing contact…",
+  "Enhancing footage…",
+  "Consulting The Gaffer…",
+  "Running corruption check…",
+  "VAR system unstable…",
+  "Angle inconclusive…"
+];
+
+const decisions = [
+  "NO FOUL — PLAY ON",
+  "FOUL — BUY A ROUND 🍺",
+  "RED CARD — TASK ASSIGNED",
+  "YELLOW CARD — DRINK PENALTY",
+  "HANDBALL — FINED",
+  "OFFSIDE — DRINK TWICE",
+  "SERIOUS FOUL PLAY — DOUBLE TASK"
+];
+
+function review(){
+  result.textContent = "—";
+  let i = 0;
+  const interval = setInterval(()=>{
+    scan.textContent = scans[i % scans.length];
+    i++;
+    if(i > 8){
+      clearInterval(interval);
+      const decision = decisions[Math.floor(Math.random()*decisions.length)];
+      scan.textContent = "Decision confirmed.";
+      result.textContent = decision;
+    }
+  }, 500);
+}
+</script>
+</body>
+</html>
