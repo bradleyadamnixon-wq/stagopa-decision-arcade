@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>First Round Roulette</title>
+  <style>
+    html, body { height:100%; margin:0; overflow:hidden; }
+    body{
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:#05060a; color:#e9eefc;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .wrap{ width:min(560px,94vw); max-height:92vh; overflow:auto;
+      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+      border-radius:18px; padding:16px; box-shadow:0 14px 30px rgba(0,0,0,0.45); }
+    .brand{ display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px; }
+    .brand img{ width:62px; height:62px; border-radius:16px; object-fit:cover; border:1px solid rgba(255,255,255,0.14); background:rgba(0,0,0,0.25); }
+    h1{ margin:6px 0 6px; text-align:center; font-size:18px; text-transform:uppercase; letter-spacing:0.08em; }
+    .sub{ margin:0 0 12px; text-align:center; font-size:13px; opacity:0.85; }
+    textarea{
+      width:100%; min-height:90px; resize:vertical;
+      border-radius:14px; padding:10px 12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06); color:#e9eefc; outline:none;
+    }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    button{
+      width:100%; border-radius:14px; padding:12px 12px; border:0;
+      background:linear-gradient(135deg, #ff3cac, #784ba0, #2b86c5);
+      color:#fff; font-weight:900; letter-spacing:0.03em; cursor:pointer;
+    }
+    .ghost{
+      width:100%; border-radius:14px; padding:12px 12px;
+      border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.06);
+      color:#e9eefc; font-weight:800; cursor:pointer;
+    }
+    .box{
+      margin-top:12px; padding:12px; border-radius:14px;
+      border:1px dashed rgba(255,255,255,0.18); background:rgba(0,0,0,0.18);
+      text-align:center; min-height:54px; display:flex; align-items:center; justify-content:center;
+    }
+    .lock{ opacity:0.75; font-size:12px; margin-top:10px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <img src="stagopa-logo.png" alt="Stagopa League">
+      <img src="dctrigon-logo.png" alt="DC Trigon">
+    </div>
+    <h1>First Round Roulette</h1>
+    <div class="sub">Paste names (one per line). Press SPIN. One loser. No redraws.</div>
+
+    <textarea id="names" placeholder="Ben&#10;Brad&#10;Craig&#10;Jack&#10;Sam&#10;Alex"></textarea>
+
+    <div class="row">
+      <button id="spinBtn">SPIN 🍺</button>
+      <button class="ghost" id="resetBtn">Reset Lock</button>
+    </div>
+
+    <div class="box" id="result">Awaiting input…</div>
+    <div class="lock" id="lockState">Decision: UNLOCKED</div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "stagopa_first_round_lock_v1";
+    const elNames = document.getElementById("names");
+    const elResult = document.getElementById("result");
+    const elLock = document.getElementById("lockState");
+    const spinBtn = document.getElementById("spinBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    function cleanList(text){
+      return text.split("\n").map(s => s.trim()).filter(Boolean);
+    }
+
+    function loadLock(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
+    }
+    function saveLock(obj){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    }
+    function clearLock(){
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    function showLocked(lock){
+      elResult.innerHTML = `<div><b>DECISION LOCKED:</b><br><br><span style="font-size:20px;font-weight:900;">${lock.name}</span><br><br>Buys the first round.</div>`;
+      elLock.textContent = `Decision: LOCKED (${new Date(lock.ts).toLocaleString()})`;
+      spinBtn.disabled = true;
+      spinBtn.style.opacity = 0.55;
+      spinBtn.style.cursor = "not-allowed";
+    }
+
+    function unlockUI(){
+      elResult.textContent = "Awaiting input…";
+      elLock.textContent = "Decision: UNLOCKED";
+      spinBtn.disabled = false;
+      spinBtn.style.opacity = 1;
+      spinBtn.style.cursor = "pointer";
+    }
+
+    // init
+    const existing = loadLock();
+    if (existing?.name) showLocked(existing);
+
+    spinBtn.addEventListener("click", () => {
+      const list = cleanList(elNames.value);
+      if (list.length < 2){
+        elResult.textContent = "Add at least 2 names, mate.";
+        return;
+      }
+      // pick
+      const pick = list[Math.floor(Math.random() * list.length)];
+      const lock = { name: pick, ts: Date.now() };
+      saveLock(lock);
+      showLocked(lock);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      clearLock();
+      unlockUI();
+    });
+  </script>
+</body>
+</html>
