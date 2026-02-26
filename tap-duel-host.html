@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap Duel Host</title>
+<style>
+body{
+  background:#05060a; color:white;
+  font-family:system-ui;
+  display:flex; justify-content:center; align-items:center;
+  height:100vh; margin:0;
+}
+.wrap{ text-align:center; width:90%; }
+.big{ font-size:28px; font-weight:900; margin:10px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="big" id="code"></div>
+  <div id="scores"></div>
+</div>
+
+<script>
+const API = "PASTE_YOUR_SCRIPT_URL_HERE";
+const MATCH = Math.random().toString(36).substring(2,7).toUpperCase();
+document.getElementById("code").textContent = "MATCH CODE: " + MATCH;
+
+setInterval(()=>{
+  fetch(API + "?match_code=" + MATCH)
+    .then(r=>r.json())
+    .then(data=>{
+      scores.innerHTML = data.map(p =>
+        `<div>${p[1]}: ${p[2]}</div>`
+      ).join("");
+    });
+},1000);
+</script>
+</body>
+</html>
