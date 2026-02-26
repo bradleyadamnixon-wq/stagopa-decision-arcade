@@ -169,10 +169,14 @@
 </div>
 
 <script>
+/* Google CSV links */
 const RAW_OVERALL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=755088792&single=true&output=csv";
 const RAW_SEGMENT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=74730700&single=true&output=csv";
 
-function proxify(url){ return "https://r.jina.ai/http://" + url.replace(/^https?:\/\//, ""); }
+/* Proxy so fetch works from GitHub Pages */
+function proxify(url){
+  return "https://r.jina.ai/http://" + url.replace(/^https?:\/\//, "");
+}
 const OVERALL_CSV = proxify(RAW_OVERALL_CSV);
 const SEGMENT_CSV = proxify(RAW_SEGMENT_CSV);
 
@@ -222,6 +226,7 @@ async function fetchText(url, label){
   return await res.text();
 }
 
+/* Extract the real CSV from proxy wrapper text */
 function extractCSVFromProxy(text, requiredHeaderWords){
   const lines = String(text).split(/\r?\n/);
   for (let i = 0; i < lines.length; i++){
@@ -245,7 +250,7 @@ function escapeHtml(str){
   }[s]));
 }
 
-/* ===== OVERALL: force numeric sort ===== */
+/* OVERALL: sort descending by points */
 function renderOverall(rows){
   const header = (rows[0] || []).map(h => (h || "").toLowerCase());
   const playerIdx = header.findIndex(h => h.includes("player"));
@@ -259,7 +264,7 @@ function renderOverall(rows){
   const data = rows.slice(1)
     .filter(r => (r[playerIdx] || "").trim().length)
     .map(r => ({ player: r[playerIdx], pts: toNumber(r[ptsIdx]) }))
-    .sort((a,b) => b.pts - a.pts);   // ✅ sorted
+    .sort((a,b) => b.pts - a.pts);
 
   if (!data.length){
     overallArea.innerHTML = `<div class="muted">No entries yet.</div>`;
@@ -268,6 +273,7 @@ function renderOverall(rows){
 
   let html = `<table>
     <thead><tr><th class="rank">#</th><th>Player</th><th class="pts">Points</th></tr></thead><tbody>`;
+
   data.forEach((d, i) => {
     html += `<tr class="${i===0 ? "topRow" : ""}">
       <td class="rank">${i+1}</td>
@@ -275,57 +281,69 @@ function renderOverall(rows){
       <td class="pts">${d.pts}</td>
     </tr>`;
   });
+
   html += `</tbody></table>`;
   overallArea.innerHTML = html;
 }
 
-/* ===== BY SEGMENT: sort rows by Grand Total (or last numeric column) ===== */
-function renderSegments(rows){
-  if (rows.length < 2){
+/* BY SEGMENT: render separate mini leaderboards (one card per segment) */
+function renderSegmentTables(rows){
+  const headers = rows[0] || [];
+  if (rows.length < 2 || headers.length < 2){
     segmentArea.innerHTML = `<div class="muted">No segment data yet.</div>`;
     return;
   }
 
-  const headers = rows[0];
   const headerLower = headers.map(h => (h || "").toLowerCase());
+
+  // Player column (Player / Player Name)
   let playerIdx = headerLower.findIndex(h => h.includes("player"));
   if (playerIdx === -1) playerIdx = 0;
 
-  // Find Grand Total column if present, else use last column
-  let grandIdx = headerLower.findIndex(h => h.includes("grand"));
-  if (grandIdx === -1) grandIdx = headers.length - 1;
+  // Segment columns = everything except Player + Grand Total
+  const segmentCols = headers
+    .map((h, i) => ({ h, i }))
+    .filter(c =>
+      c.i !== playerIdx &&
+      !String(c.h).toLowerCase().includes("grand") &&
+      String(c.h).trim().length
+    );
 
-  const usableCols = headers
-    .map((h, idx) => ({ h, idx }))
-    .filter(x => x.h && x.h.trim().length);
+  const players = rows.slice(1)
+    .filter(r => (String(r[playerIdx] || "")).toLowerCase() !== "grand total")
+    .filter(r => (String(r[playerIdx] || "")).trim().length);
 
-  let dataRows = rows.slice(1)
-    .filter(r => (r[playerIdx] || "").toLowerCase() !== "grand total")
-    .filter(r => (r[playerIdx] || "").trim().length);
+  let html = "";
 
-  // ✅ sort by grand total desc
-  dataRows = dataRows.sort((a,b) => toNumber(b[grandIdx]) - toNumber(a[grandIdx]));
+  segmentCols.forEach(seg => {
+    const data = players
+      .map(r => ({
+        player: r[playerIdx],
+        pts: toNumber(r[seg.i])
+      }))
+      .filter(d => d.player && d.pts > 0)   /* show only players with points in that segment */
+      .sort((a,b) => b.pts - a.pts);
 
-  let html = `<table><thead><tr>`;
-  usableCols.forEach((c) => {
-    const label = c.idx === playerIdx ? "Player" : c.h;
-    html += `<th>${escapeHtml(label)}</th>`;
-  });
-  html += `</tr></thead><tbody>`;
+    if (!data.length) return;
 
-  dataRows.forEach((r, i) => {
-    html += `<tr class="${i===0 ? "topRow" : ""}">`;
-    usableCols.forEach(c => {
-      const val = r[c.idx] ?? "";
-      const isPlayer = c.idx === playerIdx;
-      const isNum = !isPlayer;
-      html += `<td ${isNum ? 'class="pts"' : ""}>${isPlayer ? "<b>"+escapeHtml(val)+"</b>" : escapeHtml(val || "0")}</td>`;
+    html += `<div class="card" style="margin-bottom:12px">
+      <h2>${escapeHtml(seg.h)}</h2>
+      <table>
+        <thead><tr><th class="rank">#</th><th>Player</th><th class="pts">Points</th></tr></thead>
+        <tbody>`;
+
+    data.forEach((d,i) => {
+      html += `<tr class="${i===0 ? "topRow" : ""}">
+        <td class="rank">${i+1}</td>
+        <td><b>${escapeHtml(d.player)}</b></td>
+        <td class="pts">${d.pts}</td>
+      </tr>`;
     });
-    html += `</tr>`;
+
+    html += `</tbody></table></div>`;
   });
 
-  html += `</tbody></table>`;
-  segmentArea.innerHTML = html;
+  segmentArea.innerHTML = html || `<div class="muted">No segment data yet.</div>`;
 }
 
 async function loadAll(showStatus){
@@ -341,7 +359,7 @@ async function loadAll(showStatus){
     const segmentCSV = extractCSVFromProxy(segmentRaw, ["player"]);
 
     renderOverall(parseCSV(overallCSV));
-    renderSegments(parseCSV(segmentCSV));
+    renderSegmentTables(parseCSV(segmentCSV));
 
     statusEl.textContent = "Last update: " + new Date().toLocaleTimeString();
   } catch (e){
