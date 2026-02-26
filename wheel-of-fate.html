@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Wheel of Fate</title>
+  <style>
+    html, body { height:100%; margin:0; overflow:hidden; }
+    body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#05060a; color:#e9eefc;
+      display:flex; align-items:center; justify-content:center; }
+    .wrap{ width:min(560px,94vw); max-height:92vh; overflow:auto;
+      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+      border-radius:18px; padding:16px; box-shadow:0 14px 30px rgba(0,0,0,0.45); }
+    .brand{ display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px; }
+    .brand img{ width:62px; height:62px; border-radius:16px; object-fit:cover; border:1px solid rgba(255,255,255,0.14); background:rgba(0,0,0,0.25); }
+    h1{ margin:6px 0 6px; text-align:center; font-size:18px; text-transform:uppercase; letter-spacing:0.08em; }
+    .sub{ margin:0 0 12px; text-align:center; font-size:13px; opacity:0.85; }
+    textarea{
+      width:100%; min-height:90px; resize:vertical;
+      border-radius:14px; padding:10px 12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06); color:#e9eefc; outline:none;
+    }
+    button{
+      width:100%; border:0; border-radius:16px; padding:14px 12px; margin-top:10px;
+      background:linear-gradient(135deg, #ff3cac, #784ba0, #2b86c5);
+      color:#fff; font-weight:900; cursor:pointer;
+    }
+    .box{ margin-top:12px; padding:12px; border-radius:14px;
+      border:1px dashed rgba(255,255,255,0.18); background:rgba(0,0,0,0.18);
+      text-align:center; min-height:54px; display:flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <img src="stagopa-logo.png" alt="Stagopa League">
+      <img src="dctrigon-logo.png" alt="DC Trigon">
+    </div>
+    <h1>Wheel of Fate</h1>
+    <div class="sub">Edit outcomes (one per line). Press SPIN. Fate chooses.</div>
+
+    <textarea id="items">BUY A ROUND
+DOWN YOUR DRINK
+SWAP SEATS
+TASK CARD
+SAFE (COWARD)</textarea>
+
+    <button id="spin">SPIN 🎡</button>
+    <div class="box" id="out">Awaiting spin…</div>
+  </div>
+
+  <script>
+    const el = document.getElementById("items");
+    const out = document.getElementById("out");
+    const btn = document.getElementById("spin");
+
+    function cleanList(text){
+      return text.split("\n").map(s => s.trim()).filter(Boolean);
+    }
+
+    btn.addEventListener("click", () => {
+      const list = cleanList(el.value);
+      if (!list.length) { out.textContent = "Add outcomes first."; return; }
+
+      // Dramatic fake spin
+      let ticks = 0;
+      const totalTicks = 18 + Math.floor(Math.random()*10);
+      const interval = setInterval(() => {
+        const pick = list[Math.floor(Math.random() * list.length)];
+        out.textContent = pick;
+        ticks++;
+        if (ticks >= totalTicks){
+          clearInterval(interval);
+          out.innerHTML = `<b>FATE DECIDES:</b><br><br><span style="font-size:20px;font-weight:900;">${out.textContent}</span>`;
+        }
+      }, 70);
+    });
+  </script>
+</body>
+</html>
