@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fate Dice</title>
+<style>
+html, body { height:100%; margin:0; overflow:hidden; }
+body{
+  background:#05060a;
+  color:#e9eefc;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  display:flex; align-items:center; justify-content:center;
+}
+.wrap{
+  width:min(520px,94vw);
+  max-height:92vh;
+  overflow:auto;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 14px 30px rgba(0,0,0,0.45);
+  text-align:center;
+}
+.brand{
+  display:flex; gap:10px; justify-content:center; margin-bottom:10px;
+}
+.brand img{
+  width:64px; height:64px; border-radius:16px;
+  border:1px solid rgba(255,255,255,0.14);
+  background:#000;
+}
+h1{
+  margin:6px 0;
+  font-size:18px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.sub{
+  font-size:13px;
+  opacity:0.85;
+  margin-bottom:14px;
+}
+.dice{
+  width:140px;
+  height:140px;
+  margin:14px auto;
+  border-radius:18px;
+  border:2px solid rgba(255,255,255,0.2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:64px;
+  font-weight:900;
+  background:rgba(0,0,0,0.3);
+}
+button{
+  width:100%;
+  padding:16px;
+  border-radius:16px;
+  border:0;
+  background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
+  color:white;
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+}
+.result{
+  margin-top:12px;
+  font-weight:800;
+  font-size:16px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="stagopa-logo.png">
+    <img src="dctrigon-logo.png">
+  </div>
+
+  <h1>Fate Dice</h1>
+  <div class="sub">Roll the dice. Accept your fate.</div>
+
+  <div class="dice" id="dice">—</div>
+
+  <button onclick="roll()">ROLL DICE</button>
+
+  <div class="result" id="result">—</div>
+</div>
+
+<script>
+function roll(){
+  result.textContent = "";
+  let ticks = 0;
+  const interval = setInterval(()=>{
+    dice.textContent = Math.floor(Math.random()*6)+1;
+    ticks++;
+    if(ticks > 14){
+      clearInterval(interval);
+      const final = Math.floor(Math.random()*6)+1;
+      dice.textContent = final;
+
+      let outcome = "";
+      if(final <= 2) outcome = "YOU LOSE — BUY A ROUND 🍺";
+      else if(final <= 4) outcome = "SAFE — NO ACTION";
+      else outcome = "YOU CHOOSE WHO SUFFERS";
+
+      result.textContent = outcome;
+    }
+  }, 80);
+}
+</script>
+</body>
+</html>
