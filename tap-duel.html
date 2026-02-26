@@ -6,140 +6,183 @@
   <title>Tap Duel</title>
   <style>
     html, body { height:100%; margin:0; overflow:hidden; }
-    body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#05060a; color:#e9eefc;
-      display:flex; align-items:center; justify-content:center; }
-    .wrap{ width:min(620px,94vw); max-height:92vh; overflow:auto;
-      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
-      border-radius:18px; padding:16px; box-shadow:0 14px 30px rgba(0,0,0,0.45); }
-    .brand{ display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px; }
-    .brand img{ width:62px; height:62px; border-radius:16px; object-fit:cover; border:1px solid rgba(255,255,255,0.14); background:rgba(0,0,0,0.25); }
-    h1{ margin:6px 0 6px; text-align:center; font-size:18px; text-transform:uppercase; letter-spacing:0.08em; }
-    .sub{ margin:0 0 12px; text-align:center; font-size:13px; opacity:0.85; }
-    .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    body{
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:#05060a; color:#e9eefc;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .wrap{
+      width:min(680px,94vw); max-height:92vh; overflow:auto;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 14px 30px rgba(0,0,0,0.45);
+    }
+    .brand{
+      display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px;
+    }
+    .brand img{
+      width:62px; height:62px; border-radius:16px; object-fit:cover;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.25);
+    }
+    h1{
+      margin:6px 0 6px; text-align:center;
+      font-size:18px; text-transform:uppercase; letter-spacing:0.08em;
+    }
+    .sub{
+      margin:0 0 12px; text-align:center; font-size:13px; opacity:0.85;
+    }
+    .row{
+      display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    }
     input{
       width:100%; border-radius:14px; padding:10px 12px;
       border:1px solid rgba(255,255,255,0.14);
       background:rgba(255,255,255,0.06); color:#e9eefc; outline:none;
+      text-align:center; font-weight:700;
     }
-    .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-    .stat{ text-align:center; padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); }
-    .stat .v{ font-size:22px; font-weight:900; margin-top:2px; }
-    .big{
-      width:100%; border:0; border-radius:16px; padding:16px 12px; margin-top:10px;
-      background:linear-gradient(135deg, #ff3cac, #784ba0, #2b86c5);
-      color:#fff; font-weight:900; letter-spacing:0.03em; cursor:pointer;
-      touch-action: manipulation;
+    .stat{
+      text-align:center; padding:10px;
+      border-radius:14px; border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
     }
-    .box{ margin-top:12px; padding:12px; border-radius:14px;
-      border:1px dashed rgba(255,255,255,0.18); background:rgba(0,0,0,0.18);
-      text-align:center; min-height:54px; display:flex; align-items:center; justify-content:center; }
+    .stat .v{
+      font-size:28px; font-weight:900; margin-top:2px;
+    }
+    .tap{
+      width:100%; border:0; border-radius:16px;
+      padding:18px 12px;
+      background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);
+      color:#fff; font-weight:900; letter-spacing:0.04em;
+      cursor:pointer; touch-action:manipulation;
+    }
+    .tap:disabled{ opacity:0.5; cursor:not-allowed; }
+    .control{
+      width:100%; margin-top:10px;
+      border:0; border-radius:16px;
+      padding:14px 12px;
+      background:#111827;
+      color:#e9eefc; font-weight:800; cursor:pointer;
+      border:1px solid rgba(255,255,255,0.14);
+    }
+    .timer{
+      text-align:center; font-size:34px; font-weight:900;
+      margin:10px 0;
+    }
+    .box{
+      margin-top:12px; padding:12px; border-radius:14px;
+      border:1px dashed rgba(255,255,255,0.18);
+      background:rgba(0,0,0,0.18);
+      text-align:center; min-height:54px;
+      display:flex; align-items:center; justify-content:center;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="brand">
-      <img src="stagopa-logo.png" alt="Stagopa League">
-      <img src="dctrigon-logo.png" alt="DC Trigon">
+      <img src="stagopa-logo.png">
+      <img src="dctrigon-logo.png">
     </div>
+
     <h1>Tap Duel</h1>
-    <div class="sub">Two players. 5 seconds. Higher taps wins. Loser takes the consequence.</div>
+    <div class="sub">Two players. 5 seconds. Mash your own button. Loser takes the hit.</div>
 
     <div class="row">
-      <input id="p1" placeholder="Player 1 (e.g., Ben)">
-      <input id="p2" placeholder="Player 2 (e.g., Craig)">
+      <input id="p1" placeholder="Player 1">
+      <input id="p2" placeholder="Player 2">
     </div>
 
-    <div class="stats">
+    <div class="timer" id="time">5.0</div>
+
+    <div class="row">
       <div class="stat"><div id="p1Label">P1</div><div class="v" id="s1">0</div></div>
       <div class="stat"><div id="p2Label">P2</div><div class="v" id="s2">0</div></div>
     </div>
 
-    <button class="big" id="start">START DUEL</button>
-    <button class="big" id="tap" disabled>TAP</button>
+    <div class="row">
+      <button class="tap" id="tap1" disabled>TAP</button>
+      <button class="tap" id="tap2" disabled>TAP</button>
+    </div>
 
-    <div class="box" id="msg">Enter two names, press START, then mash TAP.</div>
+    <button class="control" id="start">START DUEL</button>
+
+    <div class="box" id="msg">Enter names and press START.</div>
   </div>
 
-  <script>
-    const ROUND = 5.0;
-    let running = false;
-    let t = ROUND;
-    let timer = null;
-    let turn = 1;
-    let s1 = 0, s2 = 0;
+<script>
+  const ROUND = 5.0;
+  let running = false;
+  let startTime = 0;
+  let s1 = 0, s2 = 0;
 
-    const p1 = document.getElementById("p1");
-    const p2 = document.getElementById("p2");
-    const p1Label = document.getElementById("p1Label");
-    const p2Label = document.getElementById("p2Label");
-    const elS1 = document.getElementById("s1");
-    const elS2 = document.getElementById("s2");
-    const start = document.getElementById("start");
-    const tap = document.getElementById("tap");
-    const msg = document.getElementById("msg");
+  const p1 = document.getElementById("p1");
+  const p2 = document.getElementById("p2");
+  const p1Label = document.getElementById("p1Label");
+  const p2Label = document.getElementById("p2Label");
+  const elS1 = document.getElementById("s1");
+  const elS2 = document.getElementById("s2");
+  const timeEl = document.getElementById("time");
+  const tap1 = document.getElementById("tap1");
+  const tap2 = document.getElementById("tap2");
+  const startBtn = document.getElementById("start");
+  const msg = document.getElementById("msg");
 
-    function nameOr(inp, fallback){ return (inp.value || "").trim() || fallback; }
+  function nameOr(el, fallback){
+    return el.value.trim() || fallback;
+  }
 
-    function updateLabels(){
-      p1Label.textContent = nameOr(p1, "Player 1");
-      p2Label.textContent = nameOr(p2, "Player 2");
+  function start(){
+    p1Label.textContent = nameOr(p1,"Player 1");
+    p2Label.textContent = nameOr(p2,"Player 2");
+    s1 = 0; s2 = 0;
+    elS1.textContent = "0"; elS2.textContent = "0";
+    running = true;
+    tap1.disabled = false;
+    tap2.disabled = false;
+    startTime = performance.now();
+    msg.innerHTML = "<b>DUEL LIVE</b> — GO.";
+    tick();
+  }
+
+  function tick(){
+    if (!running) return;
+    const elapsed = (performance.now() - startTime)/1000;
+    const left = Math.max(0, ROUND - elapsed);
+    timeEl.textContent = left.toFixed(1);
+    if (left <= 0){
+      end();
+    } else {
+      requestAnimationFrame(tick);
+    }
+  }
+
+  function end(){
+    running = false;
+    tap1.disabled = true;
+    tap2.disabled = true;
+
+    let result;
+    if (s1 === s2){
+      result = "DRAW. Both are punished or rerun.";
+    } else if (s1 > s2){
+      result = `<b>${p1Label.textContent}</b> wins. <b>${p2Label.textContent}</b> loses.`;
+    } else {
+      result = `<b>${p2Label.textContent}</b> wins. <b>${p1Label.textContent}</b> loses.`;
     }
 
-    function setMsg(html){ msg.innerHTML = html; }
+    msg.innerHTML = `
+      <b>RESULT</b><br>
+      ${p1Label.textContent}: ${s1} — ${p2Label.textContent}: ${s2}<br><br>
+      ${result}
+    `;
+  }
 
-    function startDuel(){
-      updateLabels();
-      s1 = 0; s2 = 0;
-      elS1.textContent = "0"; elS2.textContent = "0";
-      running = true;
-      turn = 1;
-      t = ROUND;
-
-      tap.disabled = false;
-      setMsg(`<b>DUEL LIVE</b> — ${p1Label.textContent} taps first. 5 seconds. GO.`);
-      const startTime = performance.now();
-      timer = setInterval(() => {
-        const elapsed = (performance.now() - startTime) / 1000;
-        t = Math.max(0, ROUND - elapsed);
-        if (t <= 0) endDuel();
-      }, 50);
-    }
-
-    function endDuel(){
-      if (!running) return;
-      running = false;
-      clearInterval(timer);
-      timer = null;
-      tap.disabled = true;
-
-      const n1 = p1Label.textContent;
-      const n2 = p2Label.textContent;
-
-      let out = "";
-      if (s1 === s2) out = `DRAW. Both are equally chaotic. Re-run or both do it.`;
-      else if (s1 > s2) out = `<b>${n1}</b> wins. <b>${n2}</b> loses. Decision enforced.`;
-      else out = `<b>${n2}</b> wins. <b>${n1}</b> loses. Decision enforced.`;
-
-      setMsg(`<div><b>RESULT</b><br>${n1}: <b>${s1}</b> — ${n2}: <b>${s2}</b><br><br>${out}</div>`);
-    }
-
-    function doTap(){
-      if (!running) return;
-      if (turn === 1){
-        s1++; elS1.textContent = String(s1);
-      } else {
-        s2++; elS2.textContent = String(s2);
-      }
-      // switch turn each tap so both share the same button fairly
-      turn = (turn === 1) ? 2 : 1;
-    }
-
-    start.addEventListener("click", startDuel);
-    tap.addEventListener("click", doTap);
-    tap.addEventListener("touchstart", (e)=>{ e.preventDefault(); doTap(); }, {passive:false});
-    p1.addEventListener("input", updateLabels);
-    p2.addEventListener("input", updateLabels);
-    updateLabels();
-  </script>
+  tap1.onclick = ()=>{ if(running){ s1++; elS1.textContent=s1; } };
+  tap2.onclick = ()=>{ if(running){ s2++; elS2.textContent=s2; } };
+  startBtn.onclick = start;
+</script>
 </body>
 </html>
