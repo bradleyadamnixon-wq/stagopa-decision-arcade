@@ -78,44 +78,56 @@
     color:white;
   }
 
-  /* Collapsible panel */
-  details.panel{
+  /* Collapsible panel (Glide-safe) */
+  .panel{
     border-radius:16px;
     border:1px solid rgba(255,255,255,0.12);
     background:rgba(0,0,0,0.18);
     padding:12px;
     margin: 0 0 12px;
   }
-  details.panel > summary{
-    list-style:none;
-    cursor:pointer;
+  .panelHeader{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:12px;
+  }
+  .panelTitle{
     font-weight:900;
     letter-spacing:0.06em;
     text-transform:uppercase;
     font-size:13px;
-    user-select:none;
   }
-  details.panel > summary::-webkit-details-marker{ display:none; }
+  .toggleBtn{
+    padding:10px 12px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.14);
+    background:rgba(255,255,255,0.06);
+    color:#e9eefc;
+    font-weight:900;
+    cursor:pointer;
+    display:flex; align-items:center; gap:10px;
+  }
   .chev{
-    width:34px; height:34px;
+    width:28px; height:28px;
     display:grid; place-items:center;
-    border-radius:12px;
+    border-radius:10px;
     border:1px solid rgba(255,255,255,0.14);
     background:rgba(255,255,255,0.06);
     font-weight:900;
     opacity:0.9;
+    transform: rotate(0deg);
+    transition: transform .15s ease;
   }
-  details[open] .chev{ transform: rotate(90deg); transition: transform .15s ease; }
-  details:not([open]) .chev{ transform: rotate(0deg); transition: transform .15s ease; }
   .panelBody{
     margin-top:10px;
     border-top:1px solid rgba(255,255,255,0.10);
     padding-top:10px;
+    display:none; /* collapsed by default */
   }
+  .panelBody.open{ display:block; }
+  .chev.open{ transform: rotate(90deg); }
+
   .rules{
     font-size:13px;
     line-height:1.4;
@@ -133,7 +145,7 @@
   }
   iframe{
     width:100%;
-    height: 680px; /* good mobile-ish height */
+    height: 720px;
     border:0;
   }
 
@@ -208,30 +220,34 @@
   <h1>Stagopa League Leaderboard</h1>
   <div class="sub">Live points table. One drink = one log. No mercy.</div>
 
-  <!-- Collapsible: How to play + Form -->
-  <details class="panel" open>
-    <summary>
-      <span>Log a Drink + How It Works</span>
-      <span class="chev">›</span>
-    </summary>
-    <div class="panelBody">
+  <!-- Collapsible: How to play + Form (Glide-safe) -->
+  <div class="panel" id="logPanel">
+    <div class="panelHeader">
+      <div class="panelTitle">Log a Drink + How it Works</div>
+      <button class="toggleBtn" id="toggleLog" type="button">
+        <span id="toggleText">Open</span>
+        <span class="chev" id="toggleChev">›</span>
+      </button>
+    </div>
+
+    <div class="panelBody" id="panelBody">
       <div class="rules">
         <b>How it’s played:</b>
         <ul>
-          <li>Every time you finish a drink, you submit one log.</li>
-          <li>Pick your <b>Segment</b> (Day 1 before 17:00 / Day 1 Part 2 / Day 2 / Day 3 / Day 4).</li>
-          <li>Points are automatically added to the leaderboards when the sheet updates.</li>
+          <li>Every time you finish a drink, submit <b>one log</b>.</li>
+          <li>Pick the correct <b>Segment</b> (Day 1 before 17:00 / Day 1 Part 2 / Day 2 / Day 3 / Day 4).</li>
+          <li>Points are added automatically — hit <b>Refresh</b> if you want instant bragging rights.</li>
           <li><b>Core squad only</b> from Day 1 Part 2 onwards (Ben / Brad / Craig).</li>
-          <li>Alex logs <b>soft drinks</b> as his equivalent drink points.</li>
+          <li>Alex logs <b>soft drinks</b> on the same scale.</li>
         </ul>
       </div>
 
       <div class="rules" style="margin-top:8px;">
         <b>How to enter a drink:</b>
         <ul>
-          <li>Open the form below.</li>
-          <li>Select your <b>Player Name</b> + <b>Segment</b> + <b>Drink Type</b>.</li>
-          <li>Hit <b>Submit</b>. That’s it — refresh if you want instant glory.</li>
+          <li>Fill in the form below.</li>
+          <li>Select: <b>Player Name</b> → <b>Segment</b> → <b>Drink Type</b>.</li>
+          <li>Press <b>Submit</b>. Done.</li>
         </ul>
       </div>
 
@@ -242,7 +258,7 @@
         </iframe>
       </div>
     </div>
-  </details>
+  </div>
 
   <div class="bar">
     <div class="pill" id="status">Loading…</div>
@@ -267,27 +283,42 @@
 
 <script>
 /* =========================
-   SETTINGS (rate-limit safe)
+   Collapsible panel logic
    ========================= */
-const AUTO_INTERVAL_MS = 60000;     // refresh every 60s
-const RETRY_ON_429_MS  = 90000;     // wait 90s then retry once
+const toggleBtn = document.getElementById("toggleLog");
+const panelBody = document.getElementById("panelBody");
+const toggleText = document.getElementById("toggleText");
+const toggleChev = document.getElementById("toggleChev");
 
-/* Google CSV links */
+toggleBtn.addEventListener("click", () => {
+  const isOpen = panelBody.classList.toggle("open");
+  toggleChev.classList.toggle("open", isOpen);
+  toggleText.textContent = isOpen ? "Close" : "Open";
+
+  // If opening, scroll to the panel (helps inside embeds)
+  if (isOpen){
+    document.getElementById("logPanel").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+});
+
+/* =========================
+   Leaderboard code
+   ========================= */
+const AUTO_INTERVAL_MS = 60000;
+const RETRY_ON_429_MS  = 90000;
+
 const RAW_OVERALL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=755088792&single=true&output=csv";
 const RAW_SEGMENT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz7JrkXY0j6sJHy1uwtLJJvI8WbVoYelnOgUyW4f0xWTzkhl6XaH-77MQIXnGnIlSRsBcxoCzkLsBc/pub?gid=74730700&single=true&output=csv";
 
-/* Proxy so fetch works from GitHub Pages */
 function proxify(url){
   return "https://r.jina.ai/http://" + url.replace(/^https?:\/\//, "");
 }
 const OVERALL_CSV = proxify(RAW_OVERALL_CSV);
 const SEGMENT_CSV = proxify(RAW_SEGMENT_CSV);
 
-/* ===== Squad rules (your plan) ===== */
 const FULL_SQUAD = ["Alex","Ben","Brad","Craig","Jack","Sam"];
 const CORE_SQUAD = ["Ben","Brad","Craig"];
 
-/* ===== App wiring ===== */
 let autoOn = true;
 let timer = null;
 
@@ -334,23 +365,17 @@ async function fetchText(url, label, allowRetry=true){
 
   if (res.status === 429){
     if (!allowRetry) throw new Error(label + " fetch failed: 429");
-
     statusEl.textContent = "Rate limited (429). Cooling down…";
-
-    // Turn auto off to stop hammering
     autoOn = false;
     autoBtn.textContent = "Auto: OFF";
     autoBtn.classList.remove("primary");
-
     await sleep(RETRY_ON_429_MS);
     return fetchText(url, label, false);
   }
-
   if (!res.ok) throw new Error(label + " fetch failed: " + res.status);
   return await res.text();
 }
 
-/* Extract the real CSV from proxy wrapper text */
 function extractCSVFromProxy(text, requiredHeaderWords){
   const lines = String(text).split(/\r?\n/);
   for (let i = 0; i < lines.length; i++){
@@ -374,7 +399,6 @@ function escapeHtml(str){
   }[s]));
 }
 
-/* OVERALL: sort descending by points */
 function renderOverall(rows){
   const header = (rows[0] || []).map(h => (h || "").toLowerCase());
   const playerIdx = header.findIndex(h => h.includes("player"));
@@ -410,7 +434,6 @@ function renderOverall(rows){
   overallArea.innerHTML = html;
 }
 
-/* BY SEGMENT: separate mini leaderboards with your squad rules + include 0s */
 function renderSegmentTables(rows){
   const headers = rows[0] || [];
   if (rows.length < 2 || headers.length < 2){
@@ -430,7 +453,6 @@ function renderSegmentTables(rows){
       String(c.h).trim().length
     );
 
-  // Map of player -> row
   const rowByPlayer = new Map();
   rows.slice(1)
     .filter(r => (String(r[playerIdx] || "")).toLowerCase() !== "grand total")
@@ -440,10 +462,6 @@ function renderSegmentTables(rows){
 
   segmentCols.forEach(seg => {
     const segTitle = String(seg.h || "");
-
-    // RULE:
-    // Day 1 (Before 17:00) => FULL squad
-    // Everything else (Day 1 Part 2, Day 2-4) => CORE squad
     const allowedPlayers = segTitle.includes("Before 17:00") ? FULL_SQUAD : CORE_SQUAD;
 
     const data = allowedPlayers.map(name => {
