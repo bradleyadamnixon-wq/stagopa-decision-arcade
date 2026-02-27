@@ -137,16 +137,25 @@
   .rules ul{ margin:8px 0 0 18px; padding:0; }
   .rules li{ margin:4px 0; }
 
-  .formWrap{
-    border-radius:14px;
-    border:1px solid rgba(255,255,255,0.12);
-    background:rgba(0,0,0,0.22);
-    overflow:hidden;
+  /* New: button row inside the panel */
+  .panelActions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-top:12px;
   }
-  iframe{
-    width:100%;
-    height: 720px;
-    border:0;
+  a.btnLink{
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .hint{
+    font-size:12px;
+    opacity:0.75;
+    margin-top:8px;
   }
 
   .grid{
@@ -220,7 +229,7 @@
   <h1>Stagopa League Leaderboard</h1>
   <div class="sub">Live points table. One drink = one log. No mercy.</div>
 
-  <!-- Collapsible: How to play + Form (Glide-safe) -->
+  <!-- Collapsible: How to play + Link button (Glide-safe) -->
   <div class="panel" id="logPanel">
     <div class="panelHeader">
       <div class="panelTitle">Log a Drink + How it Works</div>
@@ -245,17 +254,28 @@
       <div class="rules" style="margin-top:8px;">
         <b>How to enter a drink:</b>
         <ul>
-          <li>Fill in the form below.</li>
+          <li>Tap the button below to open the drink log form.</li>
           <li>Select: <b>Player Name</b> → <b>Segment</b> → <b>Drink Type</b>.</li>
           <li>Press <b>Submit</b>. Done.</li>
         </ul>
       </div>
 
-      <div class="formWrap">
-        <iframe
-          title="Stagopa Drink Log Form"
-          src="https://docs.google.com/forms/d/e/1FAIpQLSdFrjugo2wxI_GVKMW2xTJUvlhv9qDhgePPYaZHWDi5Vynuag/viewform?embedded=true">
-        </iframe>
+      <div class="panelActions">
+        <a class="btn primary btnLink"
+           href="https://docs.google.com/forms/d/e/1FAIpQLSdFrjugo2wxI_GVKMW2xTJUvlhv9qDhgePPYaZHWDi5Vynuag/viewform?usp=header"
+           target="_blank" rel="noopener">
+          🍺 LOG A DRINK
+        </a>
+
+        <a class="btn btnLink"
+           href="https://docs.google.com/forms/d/e/1FAIpQLSdFrjugo2wxI_GVKMW2xTJUvlhv9qDhgePPYaZHWDi5Vynuag/viewform?usp=header"
+           target="_blank" rel="noopener">
+          Open Form (Backup)
+        </a>
+      </div>
+
+      <div class="hint">
+        If you’re in the app and the form opens in a browser tab, that’s normal. Fill it in, submit, then come back and refresh the leaderboard.
       </div>
     </div>
   </div>
@@ -295,7 +315,6 @@ toggleBtn.addEventListener("click", () => {
   toggleChev.classList.toggle("open", isOpen);
   toggleText.textContent = isOpen ? "Close" : "Open";
 
-  // If opening, scroll to the panel (helps inside embeds)
   if (isOpen){
     document.getElementById("logPanel").scrollIntoView({ behavior:"smooth", block:"start" });
   }
